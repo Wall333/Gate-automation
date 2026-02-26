@@ -3,7 +3,7 @@ import { ActivityIndicator, View, Text, TouchableOpacity, Platform, StatusBar as
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 import { AuthProvider, useAuth } from './src/AuthContext';
@@ -19,13 +19,17 @@ const Tab = createBottomTabNavigator();
 // ── Bottom tab navigator (main app) ─────────────────────────────────
 function MainTabs() {
   const { isAdmin, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: '#4285F4',
         tabBarInactiveTintColor: '#888',
-        tabBarStyle: { paddingBottom: Platform.OS === 'android' ? 8 : 4, height: Platform.OS === 'android' ? 64 : 56 },
+        tabBarStyle: {
+          paddingBottom: Math.max(insets.bottom, 8),
+          height: 56 + Math.max(insets.bottom, 8),
+        },
         headerRight: () => (
           <View style={{ marginRight: 16 }}>
             <SignOutButton onPress={signOut} />
@@ -141,7 +145,6 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <StatusBar style="dark" />
-        {Platform.OS === 'android' && <View style={{ height: RNStatusBar.currentHeight }} />}
         <RootNavigator />
       </AuthProvider>
     </SafeAreaProvider>

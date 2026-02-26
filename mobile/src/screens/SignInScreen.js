@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,74 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { devLogin } from '../api';
+import { signInWithGoogle, devLogin } from '../api';
 import { useAuth } from '../AuthContext';
 import Config from '../config';
+
+// Conditionally import native Google Sign-In (crashes in Expo Go)
+let GoogleSignin = null;
+let statusCodes = {};
+try {
+  const gsModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gsModule.GoogleSignin;
+  statusCodes = gsModule.statusCodes;
+  GoogleSignin.configure({
+    webClientId: Config.GOOGLE_CLIENT_ID,
+    offlineAccess: false,
+  });
+} catch (e) {
+  // Native module not available (Expo Go) — Google button will be hidden
+}
+
+const isGoogleAvailable = GoogleSignin !== null;
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
 
+  async function handleGoogleSignIn() {
+    setLoading(true);
+    setPendingMessage(null);
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
+
+      if (!idToken) {
+        throw new Error('No ID token received from Google');
+      }
+
+      // Send idToken to our server for verification
+      const data = await signInWithGoogle(idToken);
+
+      if (data.approved) {
+        signIn(data.token, data.user);
+      } else {
+        setPendingMessage(
+          data.message || 'Your account is pending admin approval.',
+        );
+      }
+    } catch (err) {
+      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled — do nothing
+      } else if (err.code === statusCodes.IN_PROGRESS) {
+        // Sign-in already in progress
+      } else if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services is not available');
+      } else {
+        Alert.alert('Sign-in Error', err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleDevLogin() {
     setLoading(true);
     setPendingMessage(null);
     try {
-      const data = await devLogin('YOUR_EMAIL@gmail.com', 'Admin');
+      const data = await devLogin('welight243@gmail.com', 'Admin');
 
       if (data.approved) {
         signIn(data.token, data.user);
@@ -51,22 +105,37 @@ export default function SignInScreen() {
         </View>
       )}
 
-      {/* Dev login — only for local testing */}
-      <TouchableOpacity
-        style={[styles.devButton, loading && styles.disabledButton]}
-        onPress={handleDevLogin}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.devText}>🔧 Dev Login (dev mode)</Text>
-        )}
-      </TouchableOpacity>
+      {/* Native Google Sign-In — works in production APK */}
+      {isGoogleAvailable && (
+        <TouchableOpacity
+          style={[styles.googleButton, loading && styles.disabledButton]}
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.googleText}>Sign in with Google</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
-      <Text style={styles.devNote}>
-        Dev mode — Google Sign-In will work in production builds
-      </Text>
+      {/* Dev login — for local testing (Expo Go) */}
+      {(__DEV__ || !isGoogleAvailable) && (
+        <>
+          <TouchableOpacity
+            style={[styles.devButton, loading && styles.disabledButton]}
+            onPress={handleDevLogin}
+            disabled={loading}
+          >
+            <Text style={styles.devText}>🔧 Dev Login</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.devNote}>
+            Dev mode only — hidden in production builds
+          </Text>
+        </>
+      )}
     </View>
   );
 }
@@ -113,6 +182,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#856404',
     textAlign: 'center',
+  },
+  googleButton: {
+    backgroundColor: '#4285F4',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginBottom: 12,
+  },
+  googleText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   devButton: {
     backgroundColor: '#FF9800',

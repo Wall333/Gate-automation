@@ -3,7 +3,7 @@
 
 const Config = {
   // Server base URL (no trailing slash)
-  SERVER_URL: 'http://YOUR_LOCAL_IP:3000',
+  SERVER_URL: 'http://YOUR_SERVER_IP:3000',
 
   // Google OAuth Client ID (must match server's GOOGLE_CLIENT_ID)
   GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',

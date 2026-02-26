@@ -17,6 +17,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.wall333.gatecontroller",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -30,7 +32,13 @@
     "plugins": [
       "expo-secure-store",
       "expo-asset",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b45dc574-abfc-4f3d-806d-16c977689f74"
+      }
+    }
   }
 }

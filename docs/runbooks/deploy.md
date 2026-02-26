@@ -1,32 +1,66 @@
 # Deployment Runbook
 
-This document outlines the steps to deploy the Gate Controller server to a production environment.
+This document outlines the steps taken to deploy the Gate Controller server to Google Cloud Platform (GCP) Free Tier.
 
-## Prerequisites
+## Infrastructure Setup
 
-- A VPS, cloud VM, or platform-as-a-service (e.g. Render, Railway, DigitalOcean).
-- Node.js ≥ 18 installed on the target machine.
-- A domain or public IP with HTTPS configured (reverse proxy via Nginx, Caddy, or the platform's built-in TLS).
-- A Google OAuth 2.0 client ID configured for the production domain.
+### Google Cloud Account
+- **Account**: your-email@gmail.com
+- **Project**: gate-controller
+- **Free tier**: $300 trial credits for 90 days + Always Free resources (no charge after trial)
 
-## Environment Variables
+### VM Instance Details
 
-Copy `.env.example` to `.env` on the server and fill in production values:
+| Setting | Value |
+|---------|-------|
+| **Name** | gate-server |
+| **Region / Zone** | us-west1 (Oregon) |
+| **Machine type** | f1-micro (0.2 vCPU, 614 MB RAM) — Always Free |
+| **Boot disk** | Ubuntu 22.04 LTS x86/64, 30 GB Standard persistent disk |
+| **External IP** | <YOUR_VM_EXTERNAL_IP> |
+| **Firewall** | HTTP + HTTPS traffic allowed |
 
+> **Why f1-micro?** It's the Always Free eligible instance type on GCP. The e2-micro shows a cost estimate and may not be covered. f1-micro shows no cost = confirmed free.
+
+> **Why us-west1?** GCP free tier VMs are only available in US regions (us-west1, us-central1, us-east1). Oregon was chosen for lowest latency to New Zealand (~150ms).
+
+### Cost: $0/month
+The f1-micro instance, 30 GB standard disk, and 1 GB egress are all covered by the Always Free tier. No charges after the 90-day trial ends.
+
+## Deployment Steps (What We Did)
+
+### Step 1: Created the VM
+
+1. Went to **console.cloud.google.com**
+2. Created project **gate-controller**
+3. Enabled **Compute Engine API**
+4. Created instance:
+   - Name: `gate-server`
+   - Region: `us-west1-b`
+   - Machine type: `f1-micro`
+   - Boot disk: Ubuntu 22.04 LTS x86/64, 30 GB Standard persistent disk
+   - Firewall: ✅ Allow HTTP, ✅ Allow HTTPS
+5. VM started with external IP: `<YOUR_VM_EXTERNAL_IP>`
+
+### Step 2: SSH into the VM
+
+Clicked **SSH** button in the GCP Console to open a browser-based terminal.
+
+### Step 3: Installed Node.js
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+sudo apt install -y npm
 ```
-PORT=3000
-JWT_SECRET=<generate a strong random string>
-GOOGLE_CLIENT_ID=<production Google OAuth client ID>
-ADMIN_EMAIL=<admin's Google email>
-DEVICE_TOKEN=<generate a strong random string, share with Arduino>
-DATABASE_URL=file:./prod.db
+
+Verified:
+```bash
+node --version   # v20.x
+npm --version    # 10.x
 ```
 
-> **Security:** Never commit `.env` to version control.
-
-## Deployment Steps
-
-### 1. Clone and Install
+### Step 4: Clone the Repository
 
 ```bash
 git clone https://github.com/Wall333/Gate-automation.git
@@ -34,78 +68,107 @@ cd Gate-automation/server
 npm install --omit=dev
 ```
 
-### 2. Database Migration
+### Step 5: Configure Environment
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Fill in production values:
+```
+PORT=3000
+JWT_SECRET=<generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
+GOOGLE_CLIENT_ID=<your Google OAuth client ID>
+ADMIN_EMAIL=<your admin email>
+DEVICE_TOKEN=<generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
+DATABASE_URL=file:./prod.db
+```
+
+### Step 6: Run Database Migration
 
 ```bash
 npx prisma migrate deploy
 ```
 
-This applies all pending migrations to the production database.
-
-### 3. Start the Server
+### Step 7: Install PM2 and Start Server
 
 ```bash
-npm start
-```
-
-For process management, use PM2 or systemd:
-
-```bash
-# PM2
-npm install -g pm2
+sudo npm install -g pm2
 pm2 start index.js --name gate-server
 pm2 save
 pm2 startup
-
-# Or systemd (create a service file)
 ```
 
-### 4. Verify Health
+(Run the command that `pm2 startup` outputs with `sudo`)
+
+### Step 8: Open Port 3000 in VM Firewall
 
 ```bash
-curl https://<your-domain>/health
+sudo ufw allow 22
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw allow 3000
+sudo ufw enable
+```
+
+> **Note**: Port 3000 is open temporarily for testing. Once a reverse proxy (Caddy/Nginx) is set up with HTTPS, close port 3000 and only allow 80/443.
+
+### Step 9: Verify
+
+```bash
+curl http://localhost:3000/health
 # Expected: {"status":"ok","timestamp":"..."}
 ```
 
-### 5. Configure Reverse Proxy (if applicable)
-
-Set up Nginx or Caddy to:
-- Terminate TLS (HTTPS)
-- Proxy HTTP requests to `localhost:3000`
-- Proxy WebSocket connections (`Upgrade` header) to `localhost:3000`
-
-Example Nginx snippet:
-
-```nginx
-location / {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $host;
-}
+From any browser or phone:
+```
+http://<YOUR_VM_EXTERNAL_IP>:3000/health
 ```
 
-### 6. Arduino Configuration
+### Step 10: Update Mobile App Config
 
-Upload the sketch to the Arduino UNO R4 WiFi board via Arduino IDE.
+Update `mobile/src/config.js`:
+```js
+SERVER_URL: 'http://<YOUR_VM_EXTERNAL_IP>:3000',
+```
 
-On first boot, the Arduino starts as a WiFi Access Point named **GateController** (password: `gatesetup`). Use the mobile app → Settings → Add Device to provision:
-- WiFi SSID and password for the production network
-- Production server host and port (e.g., `yourdomain.com`, `443`)
-- The same `DEVICE_TOKEN` used in the server `.env`
+Rebuild APK with EAS to test.
 
-Config is stored in the board's EEPROM — no secrets in source code. To reconfigure, factory-reset by holding pin 3 LOW during boot.
+## GCP Firewall Rules (Network Level)
+
+The "Allow HTTP/HTTPS traffic" checkboxes during VM creation added these GCP firewall rules:
+- `default-allow-http` — TCP port 80 from 0.0.0.0/0
+- `default-allow-https` — TCP port 443 from 0.0.0.0/0
+
+To also allow port 3000 (for testing before reverse proxy):
+1. Go to **VPC Network** → **Firewall** → **Create Firewall Rule**
+2. Name: `allow-node-3000`
+3. Direction: Ingress
+4. Targets: All instances
+5. Source IP ranges: `0.0.0.0/0`
+6. Protocols: TCP, port `3000`
+7. Click **Create**
+
+## Future Steps
+
+- [ ] Set up Caddy reverse proxy for HTTPS (Let's Encrypt)
+- [ ] Close port 3000 after reverse proxy is configured
+- [ ] Add a domain name (optional, ~$10/year)
+- [ ] Remove `usesCleartextTraffic: true` from app.json after HTTPS
+- [ ] Set up daily database backups (cron job)
+- [ ] Disable SSH password login
 
 ## Rollback
 
-1. Stop the server (`pm2 stop gate-server` or `systemctl stop gate-server`).
-2. Check out the previous known-good commit.
-3. Run `npm install --omit=dev` and `npx prisma migrate deploy`.
-4. Restart the server.
+1. Stop the server: `pm2 stop gate-server`
+2. Check out the previous known-good commit: `git checkout <commit-hash>`
+3. Run `npm install --omit=dev` and `npx prisma migrate deploy`
+4. Restart: `pm2 restart gate-server`
 
 ## Monitoring
 
-- Check `/health` endpoint periodically (uptime monitor).
-- Review audit logs via `GET /admin/audit` or direct database queries.
-- Monitor device connectivity via `GET /gate/status`.
+- Check `/health` endpoint periodically (uptime monitor)
+- Review audit logs via `GET /admin/audit`
+- Monitor device connectivity via `GET /gate/status`
+- Check PM2 status: `pm2 status` / `pm2 logs gate-server`
