@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# Environment files
+.env
+.env.*
+
+# Database files
+*.db
+*.db-journal
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Android
+android/.gradle/
+android/app/build/
+
+# iOS
+ios/Pods/
+ios/build/

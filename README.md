@@ -1,1 +1,67 @@
-# Gate-automation
+# Gate Controller
+
+A secure gate controller system that lets authorized users open a gate remotely from their phone.
+
+## How It Works
+
+```
+Mobile App  ──►  Server  ──►  Arduino UNO R4 WiFi  ──►  Gate Relay
+ (React Native)    (Node.js)       (WebSocket client)       (momentary pulse)
+```
+
+1. A user signs in with their Google account via the mobile app.
+2. The server verifies the Google token and checks whether the user has been approved by an administrator.
+3. Approved users can tap a **Toggle** button, which sends a command through the server to the Arduino.
+4. The Arduino pulses a relay to actuate the gate.
+
+## Components
+
+| Directory | Description |
+|-----------|-------------|
+| `server/` | Node.js (Express) API and WebSocket server |
+| `mobile/` | React Native application |
+| `arduino/` | Arduino UNO R4 WiFi sketch |
+| `docs/` | Specifications, architecture decision records, runbooks |
+| `scripts/` | Utility and deployment scripts |
+
+## Security Overview
+
+- **Authentication:** Google Sign-In; the server verifies ID tokens server-side.
+- **Authorization:** New users are placed in a _pending_ state. An admin must approve each user before they can control the gate.
+- **Device auth:** The Arduino authenticates to the server with a pre-shared device token (provisioned via the mobile app, stored in EEPROM — never in source code).
+- **Audit logging:** Every gate action is recorded with the user, device, result, and timestamp.
+- **Secrets:** All credentials live in environment variables (`.env`), never committed to the repository.
+
+## Getting Started
+
+Prerequisites: Node.js ≥ 18, npm, React Native CLI (or Expo), Arduino IDE.
+
+```bash
+# Clone the repo
+git clone https://github.com/Wall333/Gate-automation.git
+cd Gate-automation
+
+# Server
+cd server
+cp .env.example .env   # fill in your values
+npm install
+npm run dev
+
+# Mobile
+cd ../mobile
+npm install
+npx react-native run-android   # or run-ios
+
+# Arduino
+# Open arduino/gate_controller/gate_controller.ino in Arduino IDE
+# Install libraries: WiFiS3, ArduinoHttpClient, ArduinoJson (v7+)
+# Upload to board
+# On first boot the Arduino starts as a WiFi AP ("GateController")
+# Connect with the mobile app → Settings → Add Device to provision
+```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the full development workflow and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+
+## License
+
+Private — all rights reserved.

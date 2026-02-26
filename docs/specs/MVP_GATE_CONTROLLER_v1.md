@@ -1,0 +1,367 @@
+# MVP Gate Controller — Specification v1
+
+## 1. Overview
+
+Build a minimum viable gate controller that allows approved users to remotely toggle a gate from a mobile app. The system consists of three components: a Node.js server, a React Native mobile app, and an Arduino UNO R4 WiFi with a relay module.
+
+**MVP scope:**
+- One gate, one device
+- Single action: TOGGLE (momentary relay pulse)
+- Google Sign-In authentication
+- Admin-approved authorization
+- Audit logging of every gate action
+- Device online/offline status
+
+**Out of scope (future):**
+- True open/close state tracking
+- Multiple gates
+- Guest links / timed access
+- Push notifications, geofencing, BLE
+
+---
+
+## 2. Architecture
+
+```
+┌──────────────────┐        HTTPS / REST         ┌──────────────────┐
+│   React Native   │◄──────────────────────────►│   Node.js Server  │
+│    Mobile App    │                             │    (Express)      │
+└──────────────────┘                             └────────┬─────────┘
+        │                                                 │
+        │  Google OAuth 2.0                               │  WebSocket (persistent,
+        │  (ID token sent to server)                      │   outbound from device)
+        ▼                                                 ▼
+┌──────────────────┐                             ┌──────────────────┐
+│   Google Auth    │                             │  Arduino UNO R4  │
+│   (identity)     │                             │  WiFi + Relay    │
+└──────────────────┘                             └──────────────────┘
+                                                          │
+                                                          ▼
+                                                   ┌────────────┐
+                                                   │    Gate     │
+                                                   └────────────┘
+```
+
+### Component Responsibilities
+
+| Component | Role |
+|-----------|------|
+| **Mobile App** | Google sign-in, display gate status (online/offline), TOGGLE button, admin panel (approve/deny users) |
+| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging |
+| **Arduino UNO R4 WiFi** | Maintain outbound WebSocket to server, listen for TOGGLE command, pulse relay, send heartbeat |
+
+---
+
+## 3. Authentication Flow
+
+```
+Mobile                      Server                       Google
+  │                           │                             │
+  │── Google Sign-In ────────►│                             │
+  │   (obtain id_token)       │                             │
+  │                           │── verify id_token ─────────►│
+  │                           │◄─ token valid + user info ──│
+  │                           │                             │
+  │                           │  Upsert user record         │
+  │                           │  (new → status: pending)    │
+  │◄── JWT or "pending" ─────│                             │
+```
+
+1. User taps **Sign in with Google** → receives a Google `id_token`.
+2. App sends `POST /auth/google` with `{ idToken }`.
+3. Server verifies the token via `google-auth-library` (or Google's `tokeninfo` endpoint).
+4. Server upserts the user record:
+   - **New user** → `status: "pending"`, response: `{ approved: false }`.
+   - **Existing approved user** → issue JWT, response: `{ approved: true, token }`.
+5. JWT payload: `{ sub: <userId>, email, role, iat, exp }`.
+6. JWT expiry: 7 days. Refresh by re-authenticating with Google.
+
+---
+
+## 4. Authorization Flow (Admin Approval)
+
+1. The first admin is seeded automatically on server startup using the `ADMIN_EMAIL` environment variable.
+2. Admin opens the **Users** tab in the app → calls `GET /admin/users`.
+3. Admin taps **Approve** or **Deny** on a pending user → calls `POST /admin/users/:id/approve` or `POST /admin/users/:id/deny`.
+4. On next sign-in, the newly approved user receives a JWT.
+
+---
+
+## 5. Device Communication
+
+**Preferred approach: WebSocket (outbound from Arduino)**
+
+The Arduino initiates and maintains a WebSocket connection to the server. This avoids NAT/port-forwarding issues since the device connects outward.
+
+```
+Arduino                           Server
+  │                                 │
+  │── WS connect + device_token ──►│  (authentication)
+  │◄── "authenticated" ────────────│
+  │                                 │
+  │◄── { type: "TOGGLE" } ────────│  (server relays user request)
+  │── { type: "ACK", ok: true } ──►│
+  │                                 │
+  │── { type: "HEARTBEAT" } ──────►│  (every 30 seconds)
+  │◄── { type: "PONG" } ──────────│
+```
+
+- Server tracks `lastSeen` on each heartbeat.
+- If no heartbeat received for 90 seconds → device marked offline.
+- On disconnect → auto-reconnect with exponential backoff.
+
+**Fallback: HTTP polling**
+
+If WebSocket proves unreliable on the Arduino hardware, fall back to:
+- `GET /device/commands?token=<device_token>` — Arduino polls every 2–5 seconds.
+- Server queues pending commands and returns them on poll.
+
+---
+
+## 6. Data Model
+
+### Users
+
+| Column    | Type     | Notes |
+|-----------|----------|-------|
+| id        | UUID PK  | Auto-generated |
+| email     | String   | From Google token, unique |
+| name      | String   | From Google token |
+| picture   | String   | Google avatar URL |
+| role      | Enum     | `"user"` \| `"admin"` |
+| status    | Enum     | `"pending"` \| `"approved"` \| `"denied"` |
+| createdAt | DateTime | |
+| updatedAt | DateTime | |
+
+### Devices
+
+| Column    | Type     | Notes |
+|-----------|----------|-------|
+| id        | UUID PK  | Auto-generated |
+| name      | String   | e.g. "Front Gate" |
+| tokenHash | String   | bcrypt hash of device token |
+| isOnline  | Boolean  | Derived from lastSeen |
+| lastSeen  | DateTime | Updated on heartbeat |
+| createdAt | DateTime | |
+
+### AuditLog
+
+| Column    | Type     | Notes |
+|-----------|----------|-------|
+| id        | UUID PK  | Auto-generated |
+| userId    | UUID FK  | Who triggered the action |
+| deviceId  | UUID FK  | Which device |
+| action    | String   | `"TOGGLE"` |
+| result    | String   | `"ACK"` \| `"TIMEOUT"` \| `"DEVICE_OFFLINE"` |
+| timestamp | DateTime | |
+
+**Storage (MVP):** SQLite via Prisma ORM (can migrate to PostgreSQL later).
+
+---
+
+## 7. API Endpoints
+
+### 7.1 `POST /auth/google`
+
+Verify Google ID token, upsert user, return JWT if approved.
+
+**Request:**
+```json
+{ "idToken": "<google-id-token>" }
+```
+
+**Response (approved):**
+```json
+{
+  "approved": true,
+  "token": "<jwt>",
+  "user": { "id": "...", "email": "...", "name": "...", "role": "user" }
+}
+```
+
+**Response (pending):**
+```json
+{
+  "approved": false,
+  "message": "Your account is pending admin approval."
+}
+```
+
+### 7.2 `POST /gate/toggle`
+
+Send a TOGGLE command to the connected device. Requires `Authorization: Bearer <jwt>` from an approved user.
+
+**Request:**
+```json
+{ "deviceId": "<device-uuid>" }
+```
+
+**Response (success):**
+```json
+{ "ok": true, "action": "TOGGLE", "result": "ACK" }
+```
+
+**Response (device offline):**
+```json
+{ "ok": false, "action": "TOGGLE", "result": "DEVICE_OFFLINE" }
+```
+
+### 7.3 `GET /gate/status`
+
+Return device online/offline status. Requires valid JWT.
+
+**Response:**
+```json
+{
+  "devices": [
+    { "id": "...", "name": "Front Gate", "isOnline": true, "lastSeen": "2026-02-26T12:00:00Z" }
+  ]
+}
+```
+
+### 7.4 `GET /admin/users`
+
+List all users. Requires `role: "admin"`. Supports optional query `?status=pending`.
+
+**Response:**
+```json
+[
+  { "id": "...", "email": "...", "name": "...", "status": "pending", "role": "user" }
+]
+```
+
+### 7.5 `POST /admin/users/:id/approve`
+
+Approve a pending user. Requires `role: "admin"`.
+
+**Response:**
+```json
+{ "id": "...", "email": "...", "status": "approved" }
+```
+
+### 7.6 `POST /admin/users/:id/deny`
+
+Deny a pending user. Requires `role: "admin"`.
+
+**Response:**
+```json
+{ "id": "...", "email": "...", "status": "denied" }
+```
+
+### 7.7 `GET /admin/audit`
+
+List recent audit log entries. Requires `role: "admin"`.
+
+**Response:**
+```json
+[
+  { "id": "...", "userId": "...", "userEmail": "a@b.com", "action": "TOGGLE", "result": "ACK", "timestamp": "..." }
+]
+```
+
+### 7.8 `WS /device/ws` (or `GET /device/commands` polling fallback)
+
+WebSocket endpoint for Arduino device connection. Device authenticates by sending `{ type: "AUTH", token: "<device-token>" }` as the first message.
+
+---
+
+## 8. Security Notes
+
+| Concern | Approach |
+|---------|----------|
+| Google token verification | Use `google-auth-library` server-side; never trust client-only claims |
+| JWT signing | HS256 with `JWT_SECRET` env var; 7-day expiry |
+| Device authentication | Pre-shared `DEVICE_TOKEN` sent at WS handshake; compared against bcrypt hash in DB |
+| Transport security | All traffic over HTTPS/WSS in production (reverse proxy or cloud provider) |
+| Rate limiting | `express-rate-limit`: 5 req/min on `/auth/google`, 20 req/min on `/gate/toggle` |
+| Audit logging | Every TOGGLE attempt logged with user, device, result, timestamp |
+| Secrets management | All secrets in `.env`; `.env` listed in `.gitignore`; template in `.env.example` |
+| CORS | Restrict origins in production; permissive in dev |
+| Input validation | Validate all request bodies with `zod` schemas |
+
+### Required Environment Variables
+
+| Variable | Component | Description |
+|----------|-----------|-------------|
+| `PORT` | Server | HTTP listen port (default 3000) |
+| `JWT_SECRET` | Server | Secret for signing JWTs |
+| `GOOGLE_CLIENT_ID` | Server | Google OAuth client ID |
+| `ADMIN_EMAIL` | Server | Email of the first admin (seeded on startup) |
+| `DEVICE_TOKEN` | Server + Arduino | Pre-shared secret for device auth |
+| `DATABASE_URL` | Server | Prisma connection string (e.g. `file:./dev.db`) |
+| _(WiFi SSID)_ | Arduino (EEPROM) | Provisioned via mobile app, stored in EEPROM |
+| _(WiFi password)_ | Arduino (EEPROM) | Provisioned via mobile app, stored in EEPROM |
+| _(Server host/port)_ | Arduino (EEPROM) | Provisioned via mobile app, stored in EEPROM |
+
+---
+
+## 9. Implementation Plan
+
+### Phase 1 — Server Foundation
+1. Initialize Node.js project in `/server`; install Express, dotenv, cors, zod.
+2. Set up Prisma with SQLite; define User, Device, AuditLog models; run migration.
+3. Implement `POST /auth/google` — verify token, upsert user, issue JWT.
+4. Add JWT auth middleware for protected routes.
+5. Implement admin routes: `GET /admin/users`, `POST /admin/users/:id/approve`, `POST /admin/users/:id/deny`.
+6. Seed first admin user on startup from `ADMIN_EMAIL`.
+
+### Phase 2 — Device Communication
+7. Add WebSocket server (`ws` library); handle device auth, heartbeat, TOGGLE relay.
+8. Implement `POST /gate/toggle` — verify user approved, relay to device, log result.
+9. Implement `GET /gate/status` — return device online/offline + lastSeen.
+10. Implement `GET /admin/audit` — return recent audit entries.
+
+### Phase 3 — Arduino Sketch
+11. Arduino sketch: provisioning mode (WiFi AP + HTTP config server), EEPROM storage, factory-reset pin.
+12. Normal mode: read config from EEPROM, WiFi connect, WebSocket client, authenticate with device token.
+13. Handle incoming TOGGLE → momentary relay pulse (1 s) → send ACK. Send HEARTBEAT every 30 s; auto-reconnect on disconnect.
+
+### Phase 4 — Mobile App
+14. Initialize React Native project in `/mobile`; install navigation, secure storage, Google Sign-In.
+15. Build **Sign-In screen**: Google login → `POST /auth/google` → store JWT in secure storage. Show "Pending approval" message if not yet approved.
+16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Admin sees **[+ Add Device]** button.
+17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, and a **[TOGGLE]** button that calls `POST /gate/toggle`.
+18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"), enter WiFi credentials + server address + device token, POST to Arduino's `/configure` endpoint. On success, device appears in Devices list.
+19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, audit log from `GET /admin/audit`.
+
+**Screen map:**
+```
+Sign In (Google)
+    │
+    ├─ [pending user] → "Awaiting admin approval" message
+    │
+    └─ [approved user] → Devices list
+                            │
+                            ├── Tap device → Device Detail (status + TOGGLE)
+                            │
+                            ├── [+ Add Device] (admin only) → Add Device screen
+                            │
+                            └── [Users] tab (admin only) → Users + Audit log
+```
+
+### Phase 5 — Integration & Hardening
+20. End-to-end test: sign in → approve → toggle → verify audit log.
+21. Add rate limiting, input validation, error handling polish.
+22. Write deployment runbook and finalize README.
+
+---
+
+## 10. Test Plan
+
+| # | Scenario | Method | Expected Result |
+|---|----------|--------|-----------------|
+| 1 | Invalid Google token rejected | `POST /auth/google` with bad token | 401 Unauthorized |
+| 2 | New user gets pending status | `POST /auth/google` with valid token, new email | `{ approved: false }` |
+| 3 | Admin can list users | `GET /admin/users` with admin JWT | 200 + user list |
+| 4 | Admin can approve user | `POST /admin/users/:id/approve` | status → approved |
+| 5 | Approved user receives JWT | `POST /auth/google` after approval | `{ approved: true, token }` |
+| 6 | Pending user cannot toggle | `POST /gate/toggle` with pending JWT | 403 Forbidden |
+| 7 | Approved user toggles gate | `POST /gate/toggle` with approved JWT, device online | `{ ok: true, result: "ACK" }` |
+| 8 | Toggle is audit-logged | `GET /admin/audit` after toggle | Entry present |
+| 9 | Toggle fails when device offline | Disconnect device, then toggle | `{ ok: false, result: "DEVICE_OFFLINE" }` |
+| 10 | Heartbeat updates lastSeen | Send heartbeat from device | `lastSeen` updated in DB |
+| 11 | Rate limiter triggers | 21 rapid toggle requests | 429 Too Many Requests |
+
+---
+
+*Spec version: v1 — February 26, 2026*

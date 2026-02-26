@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users ────────────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  picture   String   @default("")
+  role      String   @default("user")   // "user" | "admin"
+  status    String   @default("pending") // "pending" | "approved" | "denied"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+// ── Devices ──────────────────────────────────────────────
+model Device {
+  id        String   @id @default(uuid())
+  name      String
+  tokenHash String
+  isOnline  Boolean  @default(false)
+  lastSeen  DateTime?
+  createdAt DateTime @default(now())
+
+  auditLogs AuditLog[]
+}
+
+// ── Audit Log ────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  deviceId  String
+  action    String   // "TOGGLE"
+  result    String   // "ACK" | "TIMEOUT" | "DEVICE_OFFLINE"
+  timestamp DateTime @default(now())
+
+  user   User   @relation(fields: [userId],   references: [id])
+  device Device @relation(fields: [deviceId], references: [id])
+}
