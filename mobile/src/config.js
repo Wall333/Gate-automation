@@ -6,7 +6,7 @@ const Config = {
   SERVER_URL: 'http://YOUR_SERVER_IP:3000',
 
   // Google OAuth Client ID (must match server's GOOGLE_CLIENT_ID)
-  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',
 
   // Arduino provisioning AP defaults
   ARDUINO_AP_IP: '192.168.4.1',       // Default AP IP for Arduino

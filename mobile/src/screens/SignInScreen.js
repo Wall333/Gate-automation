@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
@@ -45,7 +46,6 @@ export default function SignInScreen() {
         throw new Error('No ID token received from Google');
       }
 
-      // Send idToken to our server for verification
       const data = await signInWithGoogle(idToken);
 
       if (data.approved) {
@@ -74,7 +74,7 @@ export default function SignInScreen() {
     setLoading(true);
     setPendingMessage(null);
     try {
-      const data = await devLogin('welight243@gmail.com', 'Admin');
+      const data = await devLogin('YOUR_ADMIN_EMAIL', 'Admin');
 
       if (data.approved) {
         signIn(data.token, data.user);
@@ -93,7 +93,10 @@ export default function SignInScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.icon}>🔒</Text>
+        <Image
+          source={require('../../assets/icon.png')}
+          style={styles.logo}
+        />
         <Text style={styles.title}>Gate Controller</Text>
         <Text style={styles.subtitle}>Sign in to control your gate</Text>
       </View>
@@ -152,8 +155,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
-  icon: {
-    fontSize: 64,
+  logo: {
+    width: 100,
+    height: 100,
+    borderRadius: 20,
     marginBottom: 16,
   },
   title: {

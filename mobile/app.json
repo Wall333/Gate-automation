@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Gate Controller",
     "slug": "mobile",
     "scheme": "gate-controller",
     "owner": "wall333",
@@ -33,7 +33,8 @@
       "expo-secure-store",
       "expo-asset",
       "expo-web-browser",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "./plugins/withNetworkSecurityConfig"
     ],
     "extra": {
       "eas": {
