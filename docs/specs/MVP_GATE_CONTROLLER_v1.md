@@ -359,13 +359,14 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 ### Phase 3 — Arduino Sketch
 11. Arduino sketch: provisioning mode (WiFi AP + HTTP config server), EEPROM storage, factory-reset pin.
 12. Normal mode: read config from EEPROM, WiFi connect, WebSocket client, authenticate with device token.
-13. Handle incoming TOGGLE → momentary relay pulse (1 s) → send ACK. Send HEARTBEAT every 30 s; auto-reconnect on disconnect.
+13. Handle incoming TOGGLE → momentary relay pulse (1 s) → send ACK. Send HEARTBEAT every 30 s; auto-reconnect on disconnect. Show heart on built-in 12×8 LED matrix when authenticated; clear on disconnect.
 
 ### Phase 4 — Mobile App
 14. Initialize React Native project in `/mobile`; install navigation, secure storage, Google Sign-In.
 15. Build **Sign-In screen**: Google login → `POST /auth/google` → store JWT in secure storage. Show "Pending approval" message if not yet approved.
-16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Admin sees **[+ Add Device]** button and a red **✕** delete button on each device (with confirmation dialog). Admin can also long-press to delete.
-17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, and a **[TOGGLE]** button that calls `POST /gate/toggle`.
+16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Long-press a device → shows options menu ("Device Settings" / "Remove Device"). Admin sees **[+ Add Device]** FAB.
+17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, a ⚙️ settings button, and a **toggle switch button** that calls `POST /gate/toggle`.
+17b. Build **Device Settings screen**: shows device info (name, ID, status, last seen, created), server connection details (host, port, WebSocket endpoint), network/provisioning info. Admin can remove device from this screen.
 18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"). The app auto-detects the phone's WiFi SSID (via `react-native-wifi-reborn`), auto-fills server host/port from `Config.SERVER_URL`, and auto-generates a unique device token by calling `POST /admin/devices`. User only needs to enter the WiFi password and optionally rename the device. On submit, the app POSTs config to the Arduino's `/configure` endpoint. On success, device appears in Devices list.
 19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, audit log from `GET /admin/audit`.
 

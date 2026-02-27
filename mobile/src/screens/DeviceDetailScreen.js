@@ -7,9 +7,11 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { toggleGate } from '../api';
 
 export default function DeviceDetailScreen({ route }) {
+  const navigation = useNavigation();
   const { device } = route.params;
   const [toggling, setToggling] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -37,7 +39,16 @@ export default function DeviceDetailScreen({ route }) {
     <View style={styles.container}>
       {/* Device info card */}
       <View style={styles.infoCard}>
-        <Text style={styles.deviceName}>{device.name}</Text>
+        <View style={styles.infoCardHeader}>
+          <Text style={styles.deviceName}>{device.name}</Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('DeviceSettings', { device })}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.statusRow}>
           <View
@@ -77,8 +88,12 @@ export default function DeviceDetailScreen({ route }) {
           <ActivityIndicator color="#fff" size="large" />
         ) : (
           <>
-            <Text style={styles.toggleIcon}>⚡</Text>
-            <Text style={styles.toggleText}>TOGGLE</Text>
+            <View style={styles.toggleSwitchIcon}>
+              <View style={styles.switchTrack}>
+                <View style={[styles.switchThumb, device.isOnline && styles.switchThumbOn]} />
+              </View>
+            </View>
+            <Text style={styles.toggleText}>TOGGLE GATE</Text>
           </>
         )}
       </TouchableOpacity>
@@ -133,6 +148,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 12,
+    flex: 1,
+  },
+  infoCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  settingsButton: {
+    padding: 4,
+  },
+  settingsIcon: {
+    fontSize: 22,
   },
   statusRow: {
     flexDirection: 'row',
@@ -172,9 +199,25 @@ const styles = StyleSheet.create({
   toggleActive: {
     backgroundColor: '#3367D6',
   },
-  toggleIcon: {
-    fontSize: 36,
-    marginBottom: 8,
+  toggleSwitchIcon: {
+    marginBottom: 10,
+  },
+  switchTrack: {
+    width: 56,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  switchThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+  },
+  switchThumbOn: {
+    alignSelf: 'flex-end',
   },
   toggleText: {
     fontSize: 20,

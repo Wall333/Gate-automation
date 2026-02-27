@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './src/AuthContext';
 import SignInScreen from './src/screens/SignInScreen';
 import DevicesScreen from './src/screens/DevicesScreen';
 import DeviceDetailScreen from './src/screens/DeviceDetailScreen';
+import DeviceSettingsScreen from './src/screens/DeviceSettingsScreen';
 import AddDeviceScreen from './src/screens/AddDeviceScreen';
 import UsersScreen from './src/screens/UsersScreen';
 
@@ -87,6 +88,11 @@ function DevicesStack() {
         name="AddDevice"
         component={AddDeviceScreen}
         options={{ title: 'Add Device' }}
+      />
+      <Stack.Screen
+        name="DeviceSettings"
+        component={DeviceSettingsScreen}
+        options={{ title: 'Device Settings' }}
       />
     </Stack.Navigator>
   );

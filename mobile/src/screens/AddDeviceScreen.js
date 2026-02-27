@@ -253,10 +253,25 @@ export default function AddDeviceScreen() {
         <View style={styles.passwordRow}>
           <TextInput
             style={[styles.input, styles.passwordInput]}
-            value={password}
-            onChangeText={setPassword}
+            value={showPassword ? password : '\u2022'.repeat(password.length)}
+            onChangeText={(text) => {
+              if (!showPassword) {
+                // Handle masking: detect what changed
+                const bullets = '\u2022'.repeat(password.length);
+                if (text.length > password.length) {
+                  // Characters added — extract new chars (always appended)
+                  const added = text.replace(/\u2022/g, '');
+                  setPassword(password + added);
+                } else if (text.length < password.length) {
+                  // Characters deleted from end
+                  setPassword(password.slice(0, text.length));
+                }
+                // Same length — no change needed
+              } else {
+                setPassword(text);
+              }
+            }}
             placeholder="WiFi password"
-            secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="off"

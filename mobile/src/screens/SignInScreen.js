@@ -39,6 +39,8 @@ export default function SignInScreen() {
     setPendingMessage(null);
     try {
       await GoogleSignin.hasPlayServices();
+      // Sign out first to always show the account chooser
+      try { await GoogleSignin.signOut(); } catch { /* ignore if not signed in */ }
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken || userInfo.idToken;
 

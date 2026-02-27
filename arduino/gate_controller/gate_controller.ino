@@ -23,11 +23,45 @@
 #include <WiFiS3.h>
 #include <ArduinoHttpClient.h>
 #include <ArduinoJson.h>
+#include "Arduino_LED_Matrix.h"
 #include "config.h"
 #include "provisioning.h"
 
 // ── Factory reset pin ────────────────────────────────────────────────
 #define RESET_PIN  3   // Hold LOW during boot to factory-reset
+
+// ── LED matrix ───────────────────────────────────────────────────────
+ArduinoLEDMatrix matrix;
+
+// Heart shape for 12×8 LED matrix (96 bits packed into 3 × uint32_t)
+//   Row 0: ..XX...XX...
+//   Row 1: .XXXX.XXXX..
+//   Row 2: .XXXXXXXXX..
+//   Row 3: ..XXXXXXX...
+//   Row 4: ...XXXXX....
+//   Row 5: ....XXX.....
+//   Row 6: .....X......
+//   Row 7: ............
+const uint32_t heartFrame[] = {
+  0x3187BC7F,
+  0xC3F81F00,
+  0xE0040000
+};
+
+// Sad face for when disconnected (12×8 LED matrix)
+//   Row 0: ............
+//   Row 1: .XX....XX...
+//   Row 2: .XX....XX...
+//   Row 3: ............
+//   Row 4: ............
+//   Row 5: ...XXXXXX...
+//   Row 6: ..X......X..
+//   Row 7: .X........X.
+const uint32_t sadFrame[] = {
+  0x06188618,
+  0x0000007E,
+  0x20401080
+};
 
 // ── Runtime state ────────────────────────────────────────────────────
 bool          provisioning  = false;
@@ -54,6 +88,10 @@ void sendAck(bool ok);
 void setup() {
   Serial.begin(115200);
   while (!Serial) { ; }
+
+  // Initialise LED matrix
+  matrix.begin();
+  matrix.loadFrame(sadFrame);
 
   // Configure hardware pins
   pinMode(RELAY_PIN, OUTPUT);
@@ -140,6 +178,7 @@ void loop() {
     Serial.println(F("[ws] Connection lost"));
     wsConnected   = false;
     authenticated = false;
+    matrix.loadFrame(sadFrame);  // Show sad face
   }
 }
 
@@ -274,6 +313,7 @@ void handleMessage(const String& message) {
   if (strcmp(type, "AUTHENTICATED") == 0) {
     authenticated = true;
     lastHeartbeat = millis();  // Reset heartbeat timer
+    matrix.loadFrame(heartFrame);  // Show heart on LED matrix
     const char* deviceId = doc["deviceId"];
     Serial.print(F("[ws] Authenticated as "));
     Serial.println(deviceId ? deviceId : "unknown");
@@ -285,6 +325,7 @@ void handleMessage(const String& message) {
     Serial.println(F("[ws] Authentication FAILED — check DEVICE_TOKEN"));
     authenticated = false;
     wsConnected   = false;
+    matrix.loadFrame(sadFrame);  // Show sad face
     return;
   }
 

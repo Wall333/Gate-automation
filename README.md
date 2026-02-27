@@ -13,6 +13,7 @@ Mobile App  ──►  Server  ──►  Arduino UNO R4 WiFi  ──►  Gate R
 2. The server verifies the Google token and checks whether the user has been approved by an administrator.
 3. Approved users can tap a **Toggle** button, which sends a command through the server to the Arduino.
 4. The Arduino pulses a relay to actuate the gate.
+5. The Arduino shows a **heart** on its built-in LED matrix when connected to the server.
 
 ## Components
 
@@ -55,6 +56,7 @@ npx react-native run-android   # or run-ios
 # Arduino
 # Open arduino/gate_controller/gate_controller.ino in Arduino IDE
 # Install libraries: WiFiS3, ArduinoHttpClient, ArduinoJson (v7+)
+# Also uses the built-in Arduino_LED_Matrix library for the heart LED indicator
 # Upload to board
 # On first boot the Arduino starts as a WiFi AP ("GateController")
 # Connect with the mobile app → Settings → Add Device to provision

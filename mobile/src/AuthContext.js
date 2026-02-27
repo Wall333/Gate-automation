@@ -1,6 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getToken, getUser, clearAuth } from './api';
 
+// Conditionally import Google Sign-In for signOut
+let GoogleSignin = null;
+try {
+  const gsModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gsModule.GoogleSignin;
+} catch {
+  // Not available
+}
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -32,6 +41,10 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
+    // Sign out of Google so account chooser shows next time
+    if (GoogleSignin) {
+      try { await GoogleSignin.signOut(); } catch { /* ignore */ }
+    }
     await clearAuth();
     setToken(null);
     setUser(null);
