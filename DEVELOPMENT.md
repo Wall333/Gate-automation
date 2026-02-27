@@ -66,8 +66,37 @@ npm run dev             # starts with file-watching
 ```bash
 cd mobile
 npm install
-npx react-native run-android
 ```
+
+#### Building the APK (Local — Windows)
+
+Requires **JDK 17** and **Android SDK** (installed via `winget install Microsoft.OpenJDK.17` + Android SDK command-line tools).
+
+```bash
+# Generate native Android project
+npx expo prebuild --platform android --clean
+
+# Build APK with Gradle
+cd android
+# Set env vars (PowerShell)
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
+.\gradlew.bat assembleRelease
+```
+
+APK output: `mobile/android/app/build/outputs/apk/release/app-release.apk`
+
+Transfer to your phone via USB or cloud storage and install.
+
+> **Note:** The local build uses a debug keystore. Its SHA-1 (`5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`) must be registered in Google Cloud Console for Google Sign-In to work.
+
+#### Building the APK (EAS Cloud)
+
+```bash
+npx eas build --platform android --profile preview --non-interactive
+```
+
+EAS cloud builds use a separate keystore (SHA-1 `44:9E:A1:1F:93:D6:0F:5A:43:E4:C1:B1:3B:A8:DF:54:01:D1:66:21`). The free tier has monthly build limits.
 
 ### Arduino
 

@@ -51,7 +51,10 @@ npm run dev
 # Mobile
 cd ../mobile
 npm install
-npx react-native run-android   # or run-ios
+npx expo prebuild --platform android --clean
+cd android && .\gradlew.bat assembleRelease   # builds APK locally
+# APK at: mobile/android/app/build/outputs/apk/release/app-release.apk
+# Or use EAS cloud: npx eas build --platform android --profile preview
 
 # Arduino
 # Open arduino/gate_controller/gate_controller.ino in Arduino IDE
