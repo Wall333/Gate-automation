@@ -76,6 +76,32 @@ router.post('/users/:id/deny', async (req, res) => {
   }
 });
 
+// ── DELETE /admin/users/:id — Remove a user ──────────────
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent admin from deleting themselves
+    if (id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot delete your own account.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Delete associated audit logs first, then the user
+    await prisma.auditLog.deleteMany({ where: { userId: id } });
+    await prisma.user.delete({ where: { id } });
+
+    return res.json({ message: 'User deleted.', id });
+  } catch (err) {
+    console.error('[admin/users] delete error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // ── GET /admin/audit ─────────────────────────────────────
 router.get('/audit', async (req, res) => {
   try {

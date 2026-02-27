@@ -146,6 +146,17 @@ export async function denyUser(userId) {
   return await res.json();
 }
 
+export async function deleteUser(userId) {
+  const res = await authFetch(`/admin/users/${userId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to delete user');
+  }
+  return await res.json();
+}
+
 export async function getAuditLog() {
   const res = await authFetch('/admin/audit');
   if (!res.ok) throw new Error('Failed to fetch audit log');
