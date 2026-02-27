@@ -50,6 +50,76 @@ After approval, implement in small steps:
 
 This keeps changes reviewable and reduces the risk of large, hard-to-debug commits.
 
+## Git Branching Workflow
+
+This project uses a **feature-branch** workflow. All work happens on short-lived branches — never commit directly to `main`.
+
+### Branch Naming
+
+| Prefix | Use |
+|--------|-----|
+| `feature/` | New features (e.g. `feature/v1.3-guest-access`) |
+| `fix/` | Bug fixes (e.g. `fix/websocket-reconnect`) |
+| `docs/` | Documentation-only changes |
+
+### Step-by-Step
+
+```
+main (stable, always deployable)
+  │
+  └── feature/v1.3-cool-thing (new work happens here)
+        │  ← commit, commit, commit
+        │
+        └── Pull Request → merge back to main when ready
+```
+
+1. **Create a branch from main**
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/v1.3-cool-thing
+   ```
+
+2. **Make changes and commit often**
+   ```bash
+   git add .
+   git commit -m "feat: add guest access endpoint"
+   ```
+
+3. **Push the branch to GitHub**
+   ```bash
+   git push origin feature/v1.3-cool-thing
+   ```
+
+4. **Open a Pull Request** on GitHub (or ask Copilot to create one)
+   - Add a description of what changed and why
+   - Review the diff to make sure no secrets are included
+
+5. **Merge the PR into main** (squash merge recommended)
+   - On GitHub: click "Squash and merge"
+   - Or via CLI / Copilot
+
+6. **Sync your local main**
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+7. **Delete the old branch**
+   ```bash
+   git branch -d feature/v1.3-cool-thing                        # local
+   git push origin --delete feature/v1.3-cool-thing              # remote
+   ```
+
+### Rules
+
+- **Never commit directly to main** — always use a feature branch.
+- **One feature per branch** — keeps PRs small and reviewable.
+- **Audit before pushing** — check `git diff` for hardcoded secrets or credentials.
+- **Delete merged branches** — keep the repo tidy.
+
+---
+
 ## Local Development
 
 ### Server

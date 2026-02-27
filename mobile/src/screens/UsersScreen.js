@@ -11,7 +11,7 @@ import {
   SectionList,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getUsers, approveUser, denyUser, getAuditLog } from '../api';
+import { getUsers, approveUser, denyUser, deleteUser, getAuditLog } from '../api';
 
 export default function UsersScreen() {
   const [tab, setTab] = useState('users'); // 'users' | 'audit'
@@ -83,6 +83,31 @@ export default function UsersScreen() {
     ]);
   }
 
+  async function handleDelete(user) {
+    Alert.alert(
+      'Remove User',
+      `Remove ${user.name || user.email}? This will permanently delete the user and all their audit log history.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(user.id);
+            try {
+              await deleteUser(user.id);
+              fetchData();
+            } catch (err) {
+              Alert.alert('Error', err.message);
+            } finally {
+              setActionLoading(null);
+            }
+          },
+        },
+      ],
+    );
+  }
+
   const renderUser = ({ item }) => (
     <View style={styles.userCard}>
       <View style={styles.userInfo}>
@@ -126,28 +151,38 @@ export default function UsersScreen() {
         </View>
       </View>
 
-      {item.status === 'pending' && (
-        <View style={styles.actions}>
-          {actionLoading === item.id ? (
-            <ActivityIndicator color="#4285F4" />
-          ) : (
-            <>
+      <View style={styles.actions}>
+        {actionLoading === item.id ? (
+          <ActivityIndicator color="#4285F4" />
+        ) : (
+          <>
+            {item.status === 'pending' && (
+              <>
+                <TouchableOpacity
+                  style={styles.approveButton}
+                  onPress={() => handleApprove(item.id)}
+                >
+                  <Text style={styles.approveText}>Approve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.denyButton}
+                  onPress={() => handleDeny(item.id)}
+                >
+                  <Text style={styles.denyText}>Deny</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            {item.role !== 'admin' && (
               <TouchableOpacity
-                style={styles.approveButton}
-                onPress={() => handleApprove(item.id)}
+                style={styles.removeButton}
+                onPress={() => handleDelete(item)}
               >
-                <Text style={styles.approveText}>Approve</Text>
+                <Text style={styles.removeText}>Remove</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.denyButton}
-                onPress={() => handleDeny(item.id)}
-              >
-                <Text style={styles.denyText}>Deny</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      )}
+            )}
+          </>
+        )}
+      </View>
     </View>
   );
 
@@ -353,6 +388,19 @@ const styles = StyleSheet.create({
   },
   denyText: {
     color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  removeButton: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  removeText: {
+    color: '#FF3B30',
     fontWeight: '600',
     fontSize: 14,
   },

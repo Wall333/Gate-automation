@@ -4,6 +4,16 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.2.1] — 2026-02-27
+
+### Added
+- **Remove user** — Admins can now permanently delete non-admin users from the Users screen. A "Remove" button appears on every user card (pending, approved, or denied). Deletes the user and all their audit log history.
+- **`DELETE /admin/users/:id`** — New server endpoint to delete a user and their associated audit logs. Prevents self-deletion (admin cannot remove their own account).
+- **`deleteUser()` API function** — Mobile client function for the delete endpoint.
+- **Git branching workflow docs** — Added a complete feature-branch workflow guide to DEVELOPMENT.md.
+
+---
+
 ## [v1.2.0] — 2026-02-27
 
 ### Added

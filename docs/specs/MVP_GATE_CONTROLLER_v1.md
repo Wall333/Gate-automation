@@ -248,6 +248,25 @@ Deny a pending user. Requires `role: "admin"`.
 { "id": "...", "email": "...", "status": "denied" }
 ```
 
+### 7.6b `DELETE /admin/users/:id`
+
+Permanently remove a user and all their associated audit logs. Requires `role: "admin"`. An admin cannot delete their own account.
+
+**Response (200):**
+```json
+{ "message": "User deleted.", "id": "<user-uuid>" }
+```
+
+**Response (400):**
+```json
+{ "error": "You cannot delete your own account." }
+```
+
+**Response (404):**
+```json
+{ "error": "User not found." }
+```
+
 ### 7.7 `GET /admin/audit`
 
 List recent audit log entries. Requires `role: "admin"`.
@@ -366,7 +385,7 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 2. Set up Prisma with SQLite; define User, Device, AuditLog models; run migration.
 3. Implement `POST /auth/google` — verify token, upsert user, issue JWT.
 4. Add JWT auth middleware for protected routes.
-5. Implement admin routes: `GET /admin/users`, `POST /admin/users/:id/approve`, `POST /admin/users/:id/deny`.
+5. Implement admin routes: `GET /admin/users`, `POST /admin/users/:id/approve`, `POST /admin/users/:id/deny`, `DELETE /admin/users/:id`.
 6. Seed first admin user on startup from `ADMIN_EMAIL`.
 
 ### Phase 2 — Device Communication
@@ -387,7 +406,7 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, a ⚙️ settings button, and a **toggle switch button** that calls `POST /gate/toggle`.
 17b. Build **Device Settings screen**: shows device info (name, ID, status, last seen, created), server connection details (host, port, WebSocket endpoint), network/provisioning info. Device name is editable inline (tap ✎ → edit → Save). Admin can remove device from this screen.
 18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"). The app auto-detects the phone's WiFi SSID (via `react-native-wifi-reborn`), auto-fills server host/port from `Config.SERVER_URL`, and auto-generates a unique device token by calling `POST /admin/devices`. User only needs to enter the WiFi password and optionally rename the device. On submit, the app POSTs config to the Arduino's `/configure` endpoint. On success, device appears in Devices list. If the user leaves the wizard before completing Arduino configuration, the registered device is automatically cleaned up from the server.
-19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, audit log from `GET /admin/audit`.
+19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, **remove user** button (non-admin users only, with confirmation), audit log from `GET /admin/audit`.
 
 **Screen map:**
 ```
@@ -434,7 +453,10 @@ Sign In (Google)
 | 17 | Deleting device cleans up audit logs | Delete device, check audit logs | Associated logs removed |
 | 18 | Admin can rename a device | `PATCH /admin/devices/:id` with `{ name: "New Name" }` | 200 + updated device |
 | 19 | Abandoned provisioning cleans up | Start Add Device, go back before Arduino config | Registered device auto-deleted |
+| 20 | Admin can delete a user | `DELETE /admin/users/:id` with admin JWT | 200 + user and audit logs removed |
+| 21 | Deleting user cleans up audit logs | Delete user, check audit logs | Associated logs removed |
+| 22 | Admin cannot self-delete | `DELETE /admin/users/:id` with own ID | 400 error |
 
 ---
 
-*Spec version: v1.2 — February 27, 2026*
+*Spec version: v1.2.1 — February 27, 2026*
