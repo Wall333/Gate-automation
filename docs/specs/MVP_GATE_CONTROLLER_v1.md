@@ -259,7 +259,36 @@ List recent audit log entries. Requires `role: "admin"`.
 ]
 ```
 
-### 7.8 `WS /device/ws` (or `GET /device/commands` polling fallback)
+### 7.8 `POST /admin/devices`
+
+Register a new device and generate a unique authentication token. Requires `role: "admin"`. The raw token is returned **once** — it cannot be retrieved again.
+
+**Request:**
+```json
+{ "name": "Front Gate" }
+```
+
+**Response (201):**
+```json
+{
+  "device": { "id": "...", "name": "Front Gate" },
+  "token": "<64-char hex token>",
+  "message": "Device created. Save the token — it cannot be retrieved again."
+}
+```
+
+### 7.9 `GET /admin/devices`
+
+List all registered devices. Requires `role: "admin"`.
+
+**Response:**
+```json
+[
+  { "id": "...", "name": "Front Gate", "isOnline": true, "lastSeen": "2026-02-27T12:00:00Z" }
+]
+```
+
+### 7.10 `WS /device/ws` (or `GET /device/commands` polling fallback)
 
 WebSocket endpoint for Arduino device connection. Device authenticates by sending `{ type: "AUTH", token: "<device-token>" }` as the first message.
 
@@ -271,7 +300,7 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 |---------|----------|
 | Google token verification | Use `google-auth-library` server-side; never trust client-only claims |
 | JWT signing | HS256 with `JWT_SECRET` env var; 7-day expiry |
-| Device authentication | Pre-shared `DEVICE_TOKEN` sent at WS handshake; compared against bcrypt hash in DB |
+| Device authentication | Per-device unique token, auto-generated via `POST /admin/devices`; bcrypt-hashed in DB; sent at WS handshake |
 | Transport security | All traffic over HTTPS/WSS in production (reverse proxy or cloud provider) |
 | Rate limiting | `express-rate-limit`: 5 req/min on `/auth/google`, 20 req/min on `/gate/toggle` |
 | Audit logging | Every TOGGLE attempt logged with user, device, result, timestamp |
@@ -287,11 +316,13 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 | `JWT_SECRET` | Server | Secret for signing JWTs |
 | `GOOGLE_CLIENT_ID` | Server | Google OAuth client ID |
 | `ADMIN_EMAIL` | Server | Email of the first admin (seeded on startup) |
-| `DEVICE_TOKEN` | Server + Arduino | Pre-shared secret for device auth |
 | `DATABASE_URL` | Server | Prisma connection string (e.g. `file:./dev.db`) |
-| _(WiFi SSID)_ | Arduino (EEPROM) | Provisioned via mobile app, stored in EEPROM |
-| _(WiFi password)_ | Arduino (EEPROM) | Provisioned via mobile app, stored in EEPROM |
-| _(Server host/port)_ | Arduino (EEPROM) | Provisioned via mobile app, stored in EEPROM |
+| _(Device token)_ | Arduino (EEPROM) | Auto-generated per device via `POST /admin/devices`, provisioned to Arduino by the mobile app |
+| _(WiFi SSID)_ | Arduino (EEPROM) | Auto-detected from phone's current WiFi, provisioned via mobile app |
+| _(WiFi password)_ | Arduino (EEPROM) | Entered by user during provisioning, stored in EEPROM |
+| _(Server host/port)_ | Arduino (EEPROM) | Auto-filled from mobile app config, stored in EEPROM |
+
+> **Note:** `DEVICE_TOKEN` is no longer a server environment variable. Device tokens are now generated per-device via the admin API and stored as bcrypt hashes in the database.
 
 ---
 
@@ -321,7 +352,7 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 15. Build **Sign-In screen**: Google login → `POST /auth/google` → store JWT in secure storage. Show "Pending approval" message if not yet approved.
 16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Admin sees **[+ Add Device]** button.
 17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, and a **[TOGGLE]** button that calls `POST /gate/toggle`.
-18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"), enter WiFi credentials + server address + device token, POST to Arduino's `/configure` endpoint. On success, device appears in Devices list.
+18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"). The app auto-detects the phone's WiFi SSID (via `react-native-wifi-reborn`), auto-fills server host/port from `Config.SERVER_URL`, and auto-generates a unique device token by calling `POST /admin/devices`. User only needs to enter the WiFi password and optionally rename the device. On submit, the app POSTs config to the Arduino's `/configure` endpoint. On success, device appears in Devices list.
 19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, audit log from `GET /admin/audit`.
 
 **Screen map:**
@@ -361,7 +392,11 @@ Sign In (Google)
 | 9 | Toggle fails when device offline | Disconnect device, then toggle | `{ ok: false, result: "DEVICE_OFFLINE" }` |
 | 10 | Heartbeat updates lastSeen | Send heartbeat from device | `lastSeen` updated in DB |
 | 11 | Rate limiter triggers | 21 rapid toggle requests | 429 Too Many Requests |
+| 12 | Admin can register a device | `POST /admin/devices` with name | 201 + device ID + raw token |
+| 13 | Admin can list devices | `GET /admin/devices` with admin JWT | 200 + device list |
+| 14 | Auto-generated token works for WS auth | Register device, use token in WS AUTH message | Device authenticated |
+| 15 | Simplified provisioning flow | Add Device screen auto-fills SSID, server, generates token | Arduino receives valid config |
 
 ---
 
-*Spec version: v1 — February 26, 2026*
+*Spec version: v1.1 — February 27, 2026*

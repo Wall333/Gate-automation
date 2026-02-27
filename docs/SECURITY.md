@@ -26,7 +26,7 @@ All communication should go through the cloud server. The phone and Arduino neve
 | Rate Limiting | 5 requests/min on auth endpoints | `routes/auth.js` |
 | Input Validation | Zod schemas on all endpoints | All route files |
 | Admin Approval | New users require manual approval | `routes/auth.js` |
-| Device Auth | Shared secret token (DEVICE_TOKEN) | `lib/deviceManager.js` |
+| Device Auth | Per-device unique tokens (auto-generated via admin API, bcrypt-hashed) | `lib/deviceManager.js`, `routes/admin.js` |
 | Audit Logging | All gate actions logged with user + timestamp | `routes/gate.js` |
 | Secret Management | `.env` file, never committed to git | `.gitignore` |
 | Secure Storage | JWT stored in device SecureStore (encrypted) | `mobile/src/api.js` |
@@ -84,16 +84,18 @@ gate.yourdomain.com {
 
 ### 4. Device Token (Arduino Authentication)
 
-**Risk**: MEDIUM — The Arduino authenticates to the server with a static shared secret (`DEVICE_TOKEN`). If compromised, an attacker could send fake gate commands.
+**Risk**: MEDIUM — Each Arduino authenticates to the server with a unique device token. If a token is compromised, an attacker could impersonate that specific device.
+
+**Current Implementation**:
+- Each device gets its own unique token, auto-generated via `POST /admin/devices` (32 random bytes = 64 hex characters).
+- The raw token is returned **once** at creation and sent to the Arduino during provisioning. It cannot be retrieved again from the server.
+- The server stores only the **bcrypt hash** of the token (`tokenHash` column in the Devices table).
+- The token is stored in the Arduino's EEPROM (not in source code).
 
 **Mitigation**:
-- Generate a strong, random token (32+ characters):
-  ```bash
-  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-  ```
-- The token is stored in the Arduino's EEPROM (not in source code) and in the server's `.env` file.
-- Rotate the token periodically: update `.env`, restart server, factory-reset Arduino, re-provision via the app.
-- In future versions, consider mutual TLS (mTLS) or per-device unique tokens.
+- Compromise of one device token does not affect other devices (per-device isolation).
+- To rotate a token: delete the device via the admin API, re-register it, and re-provision the Arduino.
+- In future versions, consider mutual TLS (mTLS) for stronger device identity.
 
 ### 5. SQL Injection
 
@@ -156,7 +158,7 @@ Use this checklist before going to production:
 - [ ] **HTTPS enabled** — TLS certificate configured via Let's Encrypt / Caddy
 - [ ] **`usesCleartextTraffic` removed** from `app.json` (after HTTPS is confirmed)
 - [ ] **Strong JWT_SECRET** — at least 32 random characters
-- [ ] **Strong DEVICE_TOKEN** — at least 32 random characters
+- [ ] **Per-device tokens** — generated automatically via admin API (no manual shared secret)
 - [ ] **Firewall rules** — only ports 22 (SSH), 80, 443 open on the cloud VM
 - [ ] **Port 3000 closed** — server only accessible via reverse proxy
 - [ ] **SSH key auth** — disable password SSH login on the cloud VM
@@ -214,7 +216,7 @@ When deploying on Google Cloud Platform (GCP) Always Free tier:
 | High | HTTPS everywhere | TLS via Let's Encrypt + Caddy/Nginx |
 | High | Helmet middleware | HTTP security headers |
 | Medium | Token refresh | Short-lived access tokens + refresh tokens |
-| Medium | Per-device keys | Unique auth tokens per Arduino instead of shared secret |
+| ~~Medium~~ | ~~Per-device keys~~ | ✅ **Implemented** — Each device gets a unique auto-generated token via `POST /admin/devices` |
 | Medium | WebSocket TLS | WSS instead of WS for Arduino ↔ Server |
 | Low | EEPROM encryption | Encrypt credentials stored on Arduino |
 | Low | 2FA | Optional two-factor auth for admin actions |

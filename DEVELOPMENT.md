@@ -73,7 +73,14 @@ npx react-native run-android
 
 Open the sketch in Arduino IDE, install the required libraries (WiFiS3, ArduinoHttpClient, ArduinoJson v7+), and upload to the board.
 
-On first boot the Arduino starts as a WiFi Access Point named **GateController** (password: `gatesetup`). Use the mobile app → Settings → Add Device to send WiFi credentials, server address, and device token. Config is stored in EEPROM — no secrets in source code.
+On first boot the Arduino starts as a WiFi Access Point named **GateController** (password: `gatesetup`). Use the mobile app → Settings → Add Device to provision:
+
+1. The app **auto-detects** your current WiFi network name (SSID).
+2. Server host and port are **auto-filled** from the app's configuration.
+3. A unique device token is **auto-generated** by calling `POST /admin/devices`.
+4. You only need to enter your **WiFi password** (and optionally rename the device).
+
+Config is stored in EEPROM — no secrets in source code.
 
 To factory-reset: hold pin 3 LOW during boot.
 

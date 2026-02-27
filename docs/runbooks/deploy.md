@@ -81,9 +81,10 @@ PORT=3000
 JWT_SECRET=<generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
 GOOGLE_CLIENT_ID=<your Google OAuth client ID>
 ADMIN_EMAIL=<your admin email>
-DEVICE_TOKEN=<generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
 DATABASE_URL=file:./prod.db
 ```
+
+> **Note:** `DEVICE_TOKEN` is no longer needed as a server environment variable. Device tokens are now auto-generated per device via the mobile app's "Add Device" flow (which calls `POST /admin/devices`).
 
 ### Step 6: Run Database Migration
 
@@ -171,4 +172,5 @@ To also allow port 3000 (for testing before reverse proxy):
 - Check `/health` endpoint periodically (uptime monitor)
 - Review audit logs via `GET /admin/audit`
 - Monitor device connectivity via `GET /gate/status`
+- List registered devices via `GET /admin/devices`
 - Check PM2 status: `pm2 status` / `pm2 logs gate-server`
