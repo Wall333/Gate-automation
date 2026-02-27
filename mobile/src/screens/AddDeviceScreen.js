@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,32 +10,104 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Config from '../config';
+import { registerDevice } from '../api';
+
+// Try to import WiFi module (only works in production builds)
+let WifiManager = null;
+try {
+  WifiManager = require('react-native-wifi-reborn').default;
+} catch {
+  // Not available in Expo Go
+}
 
 export default function AddDeviceScreen() {
   const navigation = useNavigation();
 
   const [ssid, setSsid] = useState('');
   const [password, setPassword] = useState('');
-  const [serverHost, setServerHost] = useState('');
-  const [serverPort, setServerPort] = useState('3000');
-  const [deviceToken, setDeviceToken] = useState('');
-  const [step, setStep] = useState('form'); // 'form' | 'connecting' | 'done'
+  const [deviceName, setDeviceName] = useState('Gate Controller');
+  const [step, setStep] = useState('form'); // 'form' | 'registering' | 'connecting' | 'done'
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [serverHost, setServerHost] = useState('');
+  const [serverPort, setServerPort] = useState('');
+
+  // Extract host/port from Config.SERVER_URL
+  useEffect(() => {
+    try {
+      const url = new URL(Config.SERVER_URL);
+      setServerHost(url.hostname);
+      setServerPort(url.port || '3000');
+    } catch {
+      setServerHost('');
+      setServerPort('3000');
+    }
+  }, []);
+
+  // Try to auto-detect WiFi SSID
+  useEffect(() => {
+    async function detectSsid() {
+      if (!WifiManager) return;
+      try {
+        if (Platform.OS === 'android') {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: 'Location Permission',
+              message: 'We need location access to detect your WiFi network name.',
+              buttonPositive: 'OK',
+            },
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) return;
+        }
+        const currentSsid = await WifiManager.getCurrentWifiSSID();
+        if (currentSsid && currentSsid !== '<unknown ssid>') {
+          setSsid(currentSsid);
+        }
+      } catch {
+        // Silently fail — user can type it manually
+      }
+    }
+    detectSsid();
+  }, []);
 
   async function handleProvision() {
-    if (!ssid || !password || !serverHost || !deviceToken) {
-      Alert.alert('Missing Fields', 'Please fill in all fields.');
+    if (!ssid || !password) {
+      Alert.alert('Missing Fields', 'Please enter your WiFi name and password.');
+      return;
+    }
+
+    const host = serverHost;
+    const port = serverPort;
+
+    if (!host) {
+      Alert.alert('Missing Server', 'Server host is not configured.');
+      return;
+    }
+
+    setStep('registering');
+    setError(null);
+
+    // Step 1: Register device on the server and get a token
+    let deviceToken;
+    try {
+      const result = await registerDevice(deviceName);
+      deviceToken = result.token;
+    } catch (err) {
+      setError(`Failed to register device: ${err.message}`);
+      setStep('form');
       return;
     }
 
     setStep('connecting');
-    setError(null);
 
+    // Step 2: Send config to the Arduino
     try {
-      // First, check if we can reach the Arduino's provisioning server
       const statusRes = await fetch(
         `http://${Config.ARDUINO_AP_IP}:${Config.ARDUINO_AP_PORT}/status`,
         { method: 'GET' },
@@ -45,7 +117,6 @@ export default function AddDeviceScreen() {
         throw new Error('Cannot reach the device. Are you connected to the GateController WiFi?');
       }
 
-      // Send configuration
       const configRes = await fetch(
         `http://${Config.ARDUINO_AP_IP}:${Config.ARDUINO_AP_PORT}/configure`,
         {
@@ -54,8 +125,8 @@ export default function AddDeviceScreen() {
           body: JSON.stringify({
             ssid,
             password,
-            serverHost,
-            serverPort: parseInt(serverPort, 10) || 3000,
+            serverHost: host,
+            serverPort: parseInt(port, 10) || 3000,
             deviceToken,
           }),
         },
@@ -96,6 +167,8 @@ export default function AddDeviceScreen() {
     );
   }
 
+  const isWorking = step === 'registering' || step === 'connecting';
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -122,6 +195,7 @@ export default function AddDeviceScreen() {
 
         {/* Form */}
         <Text style={styles.sectionTitle}>WiFi Credentials</Text>
+
         <Text style={styles.label}>WiFi Network Name (SSID)</Text>
         <TextInput
           style={styles.input}
@@ -132,51 +206,86 @@ export default function AddDeviceScreen() {
         />
 
         <Text style={styles.label}>WiFi Password</Text>
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={[styles.input, styles.passwordInput]}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="WiFi password"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.showPasswordRow}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          <View style={styles.checkbox}>
+            {showPassword && <View style={styles.checkboxFill} />}
+          </View>
+          <Text style={styles.showPasswordText}>Show password</Text>
+        </TouchableOpacity>
+
+        {/* Device name */}
+        <Text style={styles.sectionTitle}>Device</Text>
+        <Text style={styles.label}>Device Name</Text>
         <TextInput
           style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="WiFi password"
-          secureTextEntry
+          value={deviceName}
+          onChangeText={setDeviceName}
+          placeholder="Gate Controller"
         />
 
-        <Text style={styles.sectionTitle}>Server Connection</Text>
-        <Text style={styles.label}>Server Host (IP or domain)</Text>
-        <TextInput
-          style={styles.input}
-          value={serverHost}
-          onChangeText={setServerHost}
-          placeholder="e.g. 192.168.1.100"
-          autoCapitalize="none"
-          keyboardType="url"
-        />
+        {/* Advanced (collapsed by default) */}
+        <TouchableOpacity
+          style={styles.advancedToggle}
+          onPress={() => setShowAdvanced(!showAdvanced)}
+        >
+          <Text style={styles.advancedToggleText}>
+            {showAdvanced ? '▼' : '▶'} Advanced Settings
+          </Text>
+        </TouchableOpacity>
 
-        <Text style={styles.label}>Server Port</Text>
-        <TextInput
-          style={styles.input}
-          value={serverPort}
-          onChangeText={setServerPort}
-          placeholder="3000"
-          keyboardType="numeric"
-        />
+        {showAdvanced && (
+          <View style={styles.advancedBox}>
+            <Text style={styles.label}>Server Host</Text>
+            <TextInput
+              style={styles.input}
+              value={serverHost}
+              onChangeText={setServerHost}
+              placeholder="e.g. 192.168.1.100"
+              autoCapitalize="none"
+              keyboardType="url"
+            />
 
-        <Text style={styles.sectionTitle}>Device Authentication</Text>
-        <Text style={styles.label}>Device Token</Text>
-        <TextInput
-          style={styles.input}
-          value={deviceToken}
-          onChangeText={setDeviceToken}
-          placeholder="Shared secret from server .env"
-          autoCapitalize="none"
-        />
+            <Text style={styles.label}>Server Port</Text>
+            <TextInput
+              style={styles.input}
+              value={serverPort}
+              onChangeText={setServerPort}
+              placeholder="3000"
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.advancedNote}>
+              Server details are auto-filled from your app configuration.
+              Only change these if you know what you're doing.
+            </Text>
+          </View>
+        )}
 
         <TouchableOpacity
-          style={[styles.provisionButton, step === 'connecting' && styles.disabledButton]}
+          style={[styles.provisionButton, isWorking && styles.disabledButton]}
           onPress={handleProvision}
-          disabled={step === 'connecting'}
+          disabled={isWorking}
         >
-          {step === 'connecting' ? (
-            <ActivityIndicator color="#fff" />
+          {isWorking ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color="#fff" />
+              <Text style={styles.provisionButtonText}>
+                {step === 'registering' ? '  Registering device...' : '  Configuring...'}
+              </Text>
+            </View>
           ) : (
             <Text style={styles.provisionButtonText}>Configure Device</Text>
           )}
@@ -253,6 +362,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  showPasswordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#4285F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  checkboxFill: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: '#4285F4',
+  },
+  showPasswordText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  advancedToggle: {
+    marginTop: 20,
+    marginBottom: 4,
+  },
+  advancedToggleText: {
+    fontSize: 14,
+    color: '#4285F4',
+    fontWeight: '600',
+  },
+  advancedBox: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginBottom: 4,
+  },
+  advancedNote: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   provisionButton: {
     backgroundColor: '#34C759',

@@ -1,4 +1,6 @@
 const express = require('express');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const { authenticate, requireAdmin } = require('../middleware/auth');
@@ -101,6 +103,62 @@ router.get('/audit', async (req, res) => {
     return res.json(result);
   } catch (err) {
     console.error('[admin/audit] error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// ── POST /admin/devices — Register a new device ─────────
+const createDeviceSchema = z.object({
+  name: z.string().min(1).max(100).default('Gate Controller'),
+});
+
+router.post('/devices', async (req, res) => {
+  try {
+    const parsed = createDeviceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+
+    // Generate a random device token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = await bcrypt.hash(rawToken, 10);
+
+    const device = await prisma.device.create({
+      data: {
+        name: parsed.data.name,
+        tokenHash,
+      },
+      select: { id: true, name: true, createdAt: true },
+    });
+
+    // Return the raw token ONCE — it can't be retrieved again
+    return res.status(201).json({
+      ...device,
+      token: rawToken,
+      message: 'Device created. Save the token — it cannot be retrieved again.',
+    });
+  } catch (err) {
+    console.error('[admin/devices] error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// ── GET /admin/devices — List all devices ────────────────
+router.get('/devices', async (_req, res) => {
+  try {
+    const devices = await prisma.device.findMany({
+      select: {
+        id: true,
+        name: true,
+        isOnline: true,
+        lastSeen: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.json(devices);
+  } catch (err) {
+    console.error('[admin/devices] error:', err);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });

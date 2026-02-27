@@ -74,7 +74,7 @@ export default function SignInScreen() {
     setLoading(true);
     setPendingMessage(null);
     try {
-      const data = await devLogin('YOUR_ADMIN_EMAIL', 'Admin');
+      const data = await devLogin('welight243@gmail.com', 'Admin');
 
       if (data.approved) {
         signIn(data.token, data.user);

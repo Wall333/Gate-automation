@@ -335,11 +335,15 @@ void handleProvisioningClients() {
 
     // Build config
     DeviceConfig newCfg;
-    strlcpy(newCfg.ssid,        doc["ssid"]        | "", sizeof(newCfg.ssid));
-    strlcpy(newCfg.password,    doc["password"]     | "", sizeof(newCfg.password));
-    strlcpy(newCfg.serverHost,  doc["serverHost"]   | "", sizeof(newCfg.serverHost));
+    strncpy(newCfg.ssid,        doc["ssid"]        | "", sizeof(newCfg.ssid) - 1);
+    newCfg.ssid[sizeof(newCfg.ssid) - 1] = '\0';
+    strncpy(newCfg.password,    doc["password"]     | "", sizeof(newCfg.password) - 1);
+    newCfg.password[sizeof(newCfg.password) - 1] = '\0';
+    strncpy(newCfg.serverHost,  doc["serverHost"]   | "", sizeof(newCfg.serverHost) - 1);
+    newCfg.serverHost[sizeof(newCfg.serverHost) - 1] = '\0';
     newCfg.serverPort = doc["serverPort"] | 3000;
-    strlcpy(newCfg.deviceToken, doc["deviceToken"]  | "", sizeof(newCfg.deviceToken));
+    strncpy(newCfg.deviceToken, doc["deviceToken"]  | "", sizeof(newCfg.deviceToken) - 1);
+    newCfg.deviceToken[sizeof(newCfg.deviceToken) - 1] = '\0';
 
     // Save to EEPROM
     saveConfig(newCfg);

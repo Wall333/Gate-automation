@@ -151,3 +151,15 @@ export async function getAuditLog() {
   if (!res.ok) throw new Error('Failed to fetch audit log');
   return await res.json();
 }
+
+// ── Device Management API ────────────────────────────────────────────
+
+export async function registerDevice(name = 'Gate Controller') {
+  const res = await authFetch('/admin/devices', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to register device');
+  return data; // { id, name, token, message }
+}
