@@ -163,6 +163,38 @@ router.get('/devices', async (_req, res) => {
   }
 });
 
+// ── PATCH /admin/devices/:id — Update a device ──────────
+const updateDeviceSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+});
+
+router.patch('/devices/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const parsed = updateDeviceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+
+    // Check device exists
+    const existing = await prisma.device.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Device not found.' });
+    }
+
+    const device = await prisma.device.update({
+      where: { id },
+      data: parsed.data,
+      select: { id: true, name: true, isOnline: true, lastSeen: true, createdAt: true },
+    });
+
+    return res.json(device);
+  } catch (err) {
+    console.error('[admin/devices] update error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // ── DELETE /admin/devices/:id — Remove a device ──────────
 router.delete('/devices/:id', async (req, res) => {
   try {

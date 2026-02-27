@@ -8,6 +8,8 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getGateStatus, deleteDevice } from '../api';
@@ -66,11 +68,55 @@ export default function DevicesScreen() {
     );
   };
 
+  const handleLongPress = (device) => {
+    const options = isAdmin
+      ? ['Device Settings', 'Remove Device', 'Cancel']
+      : ['Device Settings', 'Cancel'];
+    const destructiveIndex = isAdmin ? 1 : -1;
+    const cancelIndex = isAdmin ? 2 : 1;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          destructiveButtonIndex: destructiveIndex,
+          cancelButtonIndex: cancelIndex,
+          title: device.name,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            navigation.navigate('DeviceSettings', { device });
+          } else if (isAdmin && buttonIndex === 1) {
+            handleDeleteDevice(device);
+          }
+        },
+      );
+    } else {
+      // Android: use Alert with buttons
+      const buttons = [
+        {
+          text: 'Device Settings',
+          onPress: () => navigation.navigate('DeviceSettings', { device }),
+        },
+      ];
+      if (isAdmin) {
+        buttons.push({
+          text: 'Remove Device',
+          style: 'destructive',
+          onPress: () => handleDeleteDevice(device),
+        });
+      }
+      buttons.push({ text: 'Cancel', style: 'cancel' });
+
+      Alert.alert(device.name, 'Choose an action', buttons);
+    }
+  };
+
   const renderDevice = ({ item }) => (
     <TouchableOpacity
       style={styles.deviceCard}
       onPress={() => navigation.navigate('DeviceDetail', { device: item })}
-      onLongPress={() => isAdmin && handleDeleteDevice(item)}
+      onLongPress={() => handleLongPress(item)}
     >
       <View style={styles.deviceInfo}>
         <View
@@ -87,15 +133,6 @@ export default function DevicesScreen() {
           </Text>
         </View>
       </View>
-      {isAdmin && (
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteDevice(item)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.deleteButtonText}>✕</Text>
-        </TouchableOpacity>
-      )}
       <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );

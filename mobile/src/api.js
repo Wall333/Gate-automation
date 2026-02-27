@@ -172,3 +172,13 @@ export async function deleteDevice(deviceId) {
   if (!res.ok) throw new Error(data.error || 'Failed to delete device');
   return data;
 }
+
+export async function updateDevice(deviceId, updates) {
+  const res = await authFetch(`/admin/devices/${deviceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to update device');
+  return data;
+}

@@ -4,6 +4,34 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.2.0] — 2026-02-27
+
+### Added
+- **Device Settings screen** — New screen showing device info (name, ID, status, last seen), server connection details (host, port, endpoint), and network/provisioning info. Accessible via long-press → "Device Settings" or the ⚙️ button on the device detail screen.
+- **Editable device name** — Tap the ✎ pencil icon on the Device Settings screen to rename a device inline. Saves to the server via `PATCH /admin/devices/:id`.
+- **`PATCH /admin/devices/:id`** — New server endpoint to update device properties (currently supports `name`).
+- **`updateDevice()` API function** — Mobile client function for the PATCH endpoint.
+- **Device provisioning cleanup** — If a user leaves the Add Device wizard before completing Arduino configuration, the registered device is automatically deleted from the server. The "← Back to form" button also cleans up the orphaned device.
+- **Long-press options menu** — Holding a device card now shows an action sheet with "Device Settings" and "Remove Device" options (iOS ActionSheet / Android Alert), replacing the previous direct-delete behavior.
+- **Arduino LED matrix heart** — The UNO R4 WiFi's built-in 12×8 LED matrix now shows a heart shape when the device authenticates with the server, and a **sad face** when disconnected or auth fails.
+- **Google account switching** — Sign Out now also signs out of Google, so the next sign-in always shows the Google account chooser. Users can switch between Google accounts without clearing app data.
+
+### Changed
+- **Toggle button icon** — Replaced the ⚡ emoji with a visual toggle-switch widget (track + thumb) on the device detail screen, giving a more intuitive "switch" look.
+- **Device card UI** — Removed the dedicated red ✕ delete button from device cards. Deletion is now accessed via the long-press options menu for a cleaner card layout.
+- **Device detail screen** — Added a ⚙️ settings gear button in the device info card header for quick access to device settings.
+- **WebSocket server** — Enabled `perMessageDeflate: true` on the server's WebSocketServer to accept RSV1 (compressed) frames from the Arduino client, fixing the "Invalid WebSocket frame: RSV1 must be clear" connection error.
+- **Arduino serial timeout** — `while (!Serial)` now times out after 3 seconds instead of blocking forever, so factory reset and normal boot work without the Serial Monitor open.
+
+### Fixed
+- **WebSocket RSV1 error** — Arduino's WebSocket client was sending frames with the RSV1 compression bit set, but the server rejected them. Enabled permessage-deflate on the server to accept these frames.
+- **WiFi password masking (Android)** — `secureTextEntry` didn't render bullet characters on some Android devices. Replaced with a transparent text + bullet overlay approach that avoids all race conditions with Android's TextInput re-rendering.
+- **Google Sign-In always used same account** — Added `GoogleSignin.signOut()` before `signIn()` to force the account chooser on every sign-in attempt.
+- **Ghost devices on abandoned provisioning** — Registering a device then leaving the wizard no longer leaves orphaned devices on the server.
+- **Arduino factory reset blocked by Serial.begin** — The `while (!Serial)` infinite wait prevented the factory-reset pin check from ever running when Serial Monitor wasn't connected.
+
+---
+
 ## [v1.1.0] — 2026-02-27
 
 ### Added

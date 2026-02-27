@@ -134,7 +134,7 @@ Update `mobile/src/config.js`:
 SERVER_URL: 'http://<YOUR_VM_EXTERNAL_IP>:3000',
 ```
 
-Rebuild APK with EAS to test.
+Rebuild APK locally (`cd mobile/android && .\gradlew.bat assembleRelease`) or via EAS (`npx eas build --platform android --profile preview`).
 
 ## GCP Firewall Rules (Network Level)
 

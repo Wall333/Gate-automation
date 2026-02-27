@@ -11,7 +11,11 @@ const OFFLINE_THRESHOLD_MS = 90 * 1000;
 
 // ── Initialise WebSocket server on existing HTTP server ──
 function initDeviceWebSocket(httpServer) {
-  const wss = new WebSocketServer({ server: httpServer, path: '/device/ws' });
+  const wss = new WebSocketServer({
+    server: httpServer,
+    path: '/device/ws',
+    perMessageDeflate: true, // Accept RSV1 (compressed) frames from Arduino
+  });
 
   console.log('[ws] Device WebSocket server ready on /device/ws');
 

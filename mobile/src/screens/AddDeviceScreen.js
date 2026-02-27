@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Config from '../config';
-import { registerDevice } from '../api';
+import { registerDevice, deleteDevice } from '../api';
 
 // Try to import WiFi module (only works in production builds)
 let WifiManager = null;
@@ -37,6 +37,17 @@ export default function AddDeviceScreen() {
   const [serverHost, setServerHost] = useState('');
   const [serverPort, setServerPort] = useState('');
   const [deviceToken, setDeviceToken] = useState(null);
+  const [registeredDeviceId, setRegisteredDeviceId] = useState(null);
+
+  // Clean up: delete device from server if user leaves before finishing Arduino config
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      if (registeredDeviceId && step !== 'done') {
+        deleteDevice(registeredDeviceId).catch(() => {});
+      }
+    });
+    return unsubscribe;
+  }, [navigation, registeredDeviceId, step]);
 
   // Extract host/port from Config.SERVER_URL
   useEffect(() => {
@@ -96,6 +107,7 @@ export default function AddDeviceScreen() {
     try {
       const result = await registerDevice(deviceName);
       setDeviceToken(result.token);
+      setRegisteredDeviceId(result.id);
       setStep('switchWifi');
     } catch (err) {
       setError(`Failed to register device: ${err.message}`);
@@ -139,6 +151,7 @@ export default function AddDeviceScreen() {
         throw new Error(data.error || 'Configuration failed');
       }
 
+      setRegisteredDeviceId(null); // Success — don't clean up on exit
       setStep('done');
     } catch (err) {
       setError(err.message);
@@ -205,7 +218,16 @@ export default function AddDeviceScreen() {
 
         <TouchableOpacity
           style={{ marginTop: 16 }}
-          onPress={() => { setStep('form'); setError(null); }}
+          onPress={async () => {
+            // Clean up the registered device since user is going back
+            if (registeredDeviceId) {
+              try { await deleteDevice(registeredDeviceId); } catch { /* ignore */ }
+              setRegisteredDeviceId(null);
+            }
+            setDeviceToken(null);
+            setStep('form');
+            setError(null);
+          }}
         >
           <Text style={{ color: '#4285F4', fontSize: 14 }}>← Back to form</Text>
         </TouchableOpacity>
@@ -251,12 +273,16 @@ export default function AddDeviceScreen() {
 
         <Text style={styles.label}>WiFi Password</Text>
         <View style={styles.passwordRow}>
+          {!showPassword && password.length > 0 && (
+            <Text style={[styles.input, styles.passwordInput, styles.bulletOverlay]} pointerEvents="none">
+              {'\u2022'.repeat(password.length)}
+            </Text>
+          )}
           <TextInput
-            style={[styles.input, styles.passwordInput]}
+            style={[styles.input, styles.passwordInput, !showPassword && styles.hiddenText]}
             value={password}
             onChangeText={setPassword}
             placeholder="WiFi password"
-            secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
             autoComplete="off"
@@ -415,6 +441,17 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
+  },
+  hiddenText: {
+    color: 'transparent',
+  },
+  bulletOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    color: '#1a1a1a',
   },
   showPasswordRow: {
     flexDirection: 'row',
