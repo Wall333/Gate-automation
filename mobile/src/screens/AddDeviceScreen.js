@@ -30,12 +30,13 @@ export default function AddDeviceScreen() {
   const [ssid, setSsid] = useState('');
   const [password, setPassword] = useState('');
   const [deviceName, setDeviceName] = useState('Gate Controller');
-  const [step, setStep] = useState('form'); // 'form' | 'registering' | 'connecting' | 'done'
+  const [step, setStep] = useState('form'); // 'form' | 'registering' | 'switchWifi' | 'connecting' | 'done'
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [serverHost, setServerHost] = useState('');
   const [serverPort, setServerPort] = useState('');
+  const [deviceToken, setDeviceToken] = useState(null);
 
   // Extract host/port from Config.SERVER_URL
   useEffect(() => {
@@ -76,15 +77,14 @@ export default function AddDeviceScreen() {
     detectSsid();
   }, []);
 
-  async function handleProvision() {
+  // Phase 1: Register device on the cloud server (while on home WiFi)
+  async function handleRegister() {
     if (!ssid || !password) {
       Alert.alert('Missing Fields', 'Please enter your WiFi name and password.');
       return;
     }
 
     const host = serverHost;
-    const port = serverPort;
-
     if (!host) {
       Alert.alert('Missing Server', 'Server host is not configured.');
       return;
@@ -93,20 +93,21 @@ export default function AddDeviceScreen() {
     setStep('registering');
     setError(null);
 
-    // Step 1: Register device on the server and get a token
-    let deviceToken;
     try {
       const result = await registerDevice(deviceName);
-      deviceToken = result.token;
+      setDeviceToken(result.token);
+      setStep('switchWifi');
     } catch (err) {
       setError(`Failed to register device: ${err.message}`);
       setStep('form');
-      return;
     }
+  }
 
+  // Phase 2: Send config to Arduino (after user switches to GateController AP)
+  async function handleSendConfig() {
     setStep('connecting');
+    setError(null);
 
-    // Step 2: Send config to the Arduino
     try {
       const statusRes = await fetch(
         `http://${Config.ARDUINO_AP_IP}:${Config.ARDUINO_AP_PORT}/status`,
@@ -125,8 +126,8 @@ export default function AddDeviceScreen() {
           body: JSON.stringify({
             ssid,
             password,
-            serverHost: host,
-            serverPort: parseInt(port, 10) || 3000,
+            serverHost,
+            serverPort: parseInt(serverPort, 10) || 3000,
             deviceToken,
           }),
         },
@@ -141,7 +142,7 @@ export default function AddDeviceScreen() {
       setStep('done');
     } catch (err) {
       setError(err.message);
-      setStep('form');
+      setStep('switchWifi');
     }
   }
 
@@ -167,7 +168,52 @@ export default function AddDeviceScreen() {
     );
   }
 
-  const isWorking = step === 'registering' || step === 'connecting';
+  // Step 2: User needs to switch to Arduino AP
+  if (step === 'switchWifi' || step === 'connecting') {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.successIcon}>📡</Text>
+        <Text style={styles.successTitle}>Now Connect to Arduino</Text>
+        <Text style={styles.successText}>
+          Device registered on server! Now:{'\n\n'}
+          1. Open your phone's <Text style={styles.bold}>WiFi Settings</Text>{'\n'}
+          2. Connect to <Text style={styles.bold}>GateController</Text>{'\n'}
+          {'   '}(password: <Text style={styles.bold}>gatesetup</Text>){'\n'}
+          3. Come back here and tap the button below
+        </Text>
+
+        {error && (
+          <View style={[styles.errorBox, { marginTop: 16, width: '100%' }]}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.provisionButton, { width: '100%', marginTop: 24 }, step === 'connecting' && styles.disabledButton]}
+          onPress={handleSendConfig}
+          disabled={step === 'connecting'}
+        >
+          {step === 'connecting' ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color="#fff" />
+              <Text style={styles.provisionButtonText}>  Sending config...</Text>
+            </View>
+          ) : (
+            <Text style={styles.provisionButtonText}>Send Configuration to Arduino</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{ marginTop: 16 }}
+          onPress={() => { setStep('form'); setError(null); }}
+        >
+          <Text style={{ color: '#4285F4', fontSize: 14 }}>← Back to form</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const isRegistering = step === 'registering';
 
   return (
     <KeyboardAvoidingView
@@ -177,13 +223,11 @@ export default function AddDeviceScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Instructions */}
         <View style={styles.instructionBox}>
-          <Text style={styles.instructionTitle}>Setup Instructions</Text>
+          <Text style={styles.instructionTitle}>Step 1: Enter WiFi Details</Text>
           <Text style={styles.instructionText}>
-            1. Power on your Arduino gate controller{'\n'}
-            2. Go to your phone's WiFi settings{'\n'}
-            3. Connect to the <Text style={styles.bold}>GateController</Text>{' '}
-            network (password: <Text style={styles.bold}>gatesetup</Text>){'\n'}
-            4. Come back here and fill in the form below
+            Make sure you're on your <Text style={styles.bold}>home WiFi</Text> (not the Arduino).{' '}
+            Enter your WiFi credentials below, then we'll register the device on the server.{' '}
+            You'll switch to the Arduino's WiFi in the next step.
           </Text>
         </View>
 
@@ -214,6 +258,10 @@ export default function AddDeviceScreen() {
             placeholder="WiFi password"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="off"
+            textContentType="none"
+            keyboardType="default"
           />
         </View>
         <TouchableOpacity
@@ -275,19 +323,17 @@ export default function AddDeviceScreen() {
         )}
 
         <TouchableOpacity
-          style={[styles.provisionButton, isWorking && styles.disabledButton]}
-          onPress={handleProvision}
-          disabled={isWorking}
+          style={[styles.provisionButton, isRegistering && styles.disabledButton]}
+          onPress={handleRegister}
+          disabled={isRegistering}
         >
-          {isWorking ? (
+          {isRegistering ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator color="#fff" />
-              <Text style={styles.provisionButtonText}>
-                {step === 'registering' ? '  Registering device...' : '  Configuring...'}
-              </Text>
+              <Text style={styles.provisionButtonText}>  Registering device...</Text>
             </View>
           ) : (
-            <Text style={styles.provisionButtonText}>Configure Device</Text>
+            <Text style={styles.provisionButtonText}>Register & Continue</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

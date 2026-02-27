@@ -288,7 +288,21 @@ List all registered devices. Requires `role: "admin"`.
 ]
 ```
 
-### 7.10 `WS /device/ws` (or `GET /device/commands` polling fallback)
+### 7.10 `DELETE /admin/devices/:id`
+
+Remove a registered device and its associated audit logs. Requires `role: "admin"`. The device will need to be factory-reset and re-provisioned to reconnect.
+
+**Response (200):**
+```json
+{ "message": "Device deleted.", "id": "<device-uuid>" }
+```
+
+**Response (404):**
+```json
+{ "error": "Device not found." }
+```
+
+### 7.11 `WS /device/ws` (or `GET /device/commands` polling fallback)
 
 WebSocket endpoint for Arduino device connection. Device authenticates by sending `{ type: "AUTH", token: "<device-token>" }` as the first message.
 
@@ -350,7 +364,7 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 ### Phase 4 — Mobile App
 14. Initialize React Native project in `/mobile`; install navigation, secure storage, Google Sign-In.
 15. Build **Sign-In screen**: Google login → `POST /auth/google` → store JWT in secure storage. Show "Pending approval" message if not yet approved.
-16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Admin sees **[+ Add Device]** button.
+16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Admin sees **[+ Add Device]** button and a red **✕** delete button on each device (with confirmation dialog). Admin can also long-press to delete.
 17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, and a **[TOGGLE]** button that calls `POST /gate/toggle`.
 18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"). The app auto-detects the phone's WiFi SSID (via `react-native-wifi-reborn`), auto-fills server host/port from `Config.SERVER_URL`, and auto-generates a unique device token by calling `POST /admin/devices`. User only needs to enter the WiFi password and optionally rename the device. On submit, the app POSTs config to the Arduino's `/configure` endpoint. On success, device appears in Devices list.
 19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, audit log from `GET /admin/audit`.
@@ -396,6 +410,8 @@ Sign In (Google)
 | 13 | Admin can list devices | `GET /admin/devices` with admin JWT | 200 + device list |
 | 14 | Auto-generated token works for WS auth | Register device, use token in WS AUTH message | Device authenticated |
 | 15 | Simplified provisioning flow | Add Device screen auto-fills SSID, server, generates token | Arduino receives valid config |
+| 16 | Admin can delete a device | `DELETE /admin/devices/:id` with admin JWT | 200 + device removed from DB |
+| 17 | Deleting device cleans up audit logs | Delete device, check audit logs | Associated logs removed |
 
 ---
 

@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { getGateStatus } from '../api';
+import { getGateStatus, deleteDevice } from '../api';
 import { useAuth } from '../AuthContext';
 
 export default function DevicesScreen() {
@@ -43,10 +44,33 @@ export default function DevicesScreen() {
     fetchDevices();
   };
 
+  const handleDeleteDevice = (device) => {
+    Alert.alert(
+      'Remove Device',
+      `Are you sure you want to remove "${device.name}"? The device will need to be re-provisioned to reconnect.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDevice(device.id);
+              fetchDevices();
+            } catch (err) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const renderDevice = ({ item }) => (
     <TouchableOpacity
       style={styles.deviceCard}
       onPress={() => navigation.navigate('DeviceDetail', { device: item })}
+      onLongPress={() => isAdmin && handleDeleteDevice(item)}
     >
       <View style={styles.deviceInfo}>
         <View
@@ -55,7 +79,7 @@ export default function DevicesScreen() {
             { backgroundColor: item.isOnline ? '#34C759' : '#FF3B30' },
           ]}
         />
-        <View>
+        <View style={styles.deviceTextContainer}>
           <Text style={styles.deviceName}>{item.name}</Text>
           <Text style={styles.deviceStatus}>
             {item.isOnline ? 'Online' : 'Offline'}
@@ -63,6 +87,15 @@ export default function DevicesScreen() {
           </Text>
         </View>
       </View>
+      {isAdmin && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteDevice(item)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.deleteButtonText}>✕</Text>
+        </TouchableOpacity>
+      )}
       <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
@@ -174,6 +207,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#ccc',
     fontWeight: '300',
+  },
+  deviceTextContainer: {
+    flex: 1,
+  },
+  deleteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   emptyContainer: {
     alignItems: 'center',

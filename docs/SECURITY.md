@@ -94,7 +94,7 @@ gate.yourdomain.com {
 
 **Mitigation**:
 - Compromise of one device token does not affect other devices (per-device isolation).
-- To rotate a token: delete the device via the admin API, re-register it, and re-provision the Arduino.
+- To rotate a token: delete the device via `/admin/devices/:id`, re-register it with `POST /admin/devices`, and re-provision the Arduino.
 - In future versions, consider mutual TLS (mTLS) for stronger device identity.
 
 ### 5. SQL Injection

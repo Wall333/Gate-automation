@@ -163,4 +163,26 @@ router.get('/devices', async (_req, res) => {
   }
 });
 
+// ── DELETE /admin/devices/:id — Remove a device ──────────
+router.delete('/devices/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check device exists
+    const device = await prisma.device.findUnique({ where: { id } });
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found.' });
+    }
+
+    // Delete associated audit logs first, then the device
+    await prisma.auditLog.deleteMany({ where: { deviceId: id } });
+    await prisma.device.delete({ where: { id } });
+
+    return res.json({ message: 'Device deleted.', id });
+  } catch (err) {
+    console.error('[admin/devices] delete error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 module.exports = router;

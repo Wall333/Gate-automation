@@ -163,3 +163,12 @@ export async function registerDevice(name = 'Gate Controller') {
   if (!res.ok) throw new Error(data.error || 'Failed to register device');
   return data; // { id, name, token, message }
 }
+
+export async function deleteDevice(deviceId) {
+  const res = await authFetch(`/admin/devices/${deviceId}`, {
+    method: 'DELETE',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to delete device');
+  return data;
+}
