@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { deleteDevice } from '../api';
+import { deleteDevice, updateDevice } from '../api';
 import { useAuth } from '../AuthContext';
 import Config from '../config';
 
@@ -17,6 +19,10 @@ export default function DeviceSettingsScreen() {
   const route = useRoute();
   const { device } = route.params;
   const { isAdmin } = useAuth();
+
+  const [name, setName] = useState(device.name);
+  const [editingName, setEditingName] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Extract server info from Config
   let serverHost = '';
@@ -29,10 +35,38 @@ export default function DeviceSettingsScreen() {
     serverHost = Config.SERVER_URL;
   }
 
+  async function handleSaveName() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      Alert.alert('Invalid', 'Device name cannot be empty.');
+      return;
+    }
+    if (trimmed === device.name) {
+      setEditingName(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateDevice(device.id, { name: trimmed });
+      device.name = trimmed; // update the object so other screens reflect it
+      setName(trimmed);
+      setEditingName(false);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCancelName() {
+    setName(device.name);
+    setEditingName(false);
+  }
+
   function handleRemoveDevice() {
     Alert.alert(
       'Remove Device',
-      `Are you sure you want to remove "${device.name}"?\n\nThe device will need to be factory-reset and re-provisioned to reconnect.`,
+      `Are you sure you want to remove "${name}"?\n\nThe device will need to be factory-reset and re-provisioned to reconnect.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -41,7 +75,6 @@ export default function DeviceSettingsScreen() {
           onPress: async () => {
             try {
               await deleteDevice(device.id);
-              // Go back to device list
               navigation.popToTop();
             } catch (err) {
               Alert.alert('Error', err.message);
@@ -58,7 +91,45 @@ export default function DeviceSettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Device</Text>
         <View style={styles.card}>
-          <InfoRow label="Name" value={device.name} />
+          {/* Editable Name */}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Name</Text>
+            {editingName ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.editInput}
+                  value={name}
+                  onChangeText={setName}
+                  maxLength={100}
+                  autoFocus
+                  selectTextOnFocus
+                  onSubmitEditing={handleSaveName}
+                  returnKeyType="done"
+                />
+                {saving ? (
+                  <ActivityIndicator size="small" color="#007AFF" style={{ marginLeft: 8 }} />
+                ) : (
+                  <>
+                    <TouchableOpacity onPress={handleSaveName} style={styles.editBtn}>
+                      <Text style={styles.saveText}>Save</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleCancelName} style={styles.editBtn}>
+                      <Text style={styles.cancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.editableValue}
+                onPress={() => setEditingName(true)}
+              >
+                <Text style={styles.infoValue}>{name}</Text>
+                <Text style={styles.editIcon}>✎</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <InfoRow label="ID" value={device.id} mono />
           <InfoRow
             label="Status"
@@ -88,6 +159,10 @@ export default function DeviceSettingsScreen() {
           <InfoRow label="Server Port" value={serverPort} />
           <InfoRow label="Protocol" value="WebSocket (ws://)" />
           <InfoRow label="Endpoint" value="/device/ws" mono />
+          <Text style={styles.cardNote}>
+            Server connection is set during provisioning. To change it,
+            factory-reset the device and re-provision via Add Device.
+          </Text>
         </View>
       </View>
 
@@ -95,14 +170,8 @@ export default function DeviceSettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Network</Text>
         <View style={styles.card}>
-          <InfoRow
-            label="Provisioning AP"
-            value="GateController"
-          />
-          <InfoRow
-            label="AP Password"
-            value="gatesetup"
-          />
+          <InfoRow label="Provisioning AP" value="GateController" />
+          <InfoRow label="AP Password" value="gatesetup" />
           <Text style={styles.cardNote}>
             To change WiFi credentials, factory-reset the device (hold pin 3
             LOW during boot) and re-provision via Add Device.
@@ -210,6 +279,48 @@ const styles = StyleSheet.create({
   mono: {
     fontFamily: 'monospace',
     fontSize: 13,
+  },
+  editableValue: {
+    flex: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  editIcon: {
+    fontSize: 16,
+    color: '#007AFF',
+    marginLeft: 6,
+  },
+  editRow: {
+    flex: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  editInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#007AFF',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    textAlign: 'right',
+  },
+  editBtn: {
+    marginLeft: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  saveText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  cancelText: {
+    fontSize: 14,
+    color: '#999',
   },
   dangerButton: {
     backgroundColor: '#FF3B30',

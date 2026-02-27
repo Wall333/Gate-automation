@@ -302,6 +302,25 @@ Remove a registered device and its associated audit logs. Requires `role: "admin
 { "error": "Device not found." }
 ```
 
+### 7.10b `PATCH /admin/devices/:id`
+
+Update a device's editable properties. Currently supports renaming. Requires `role: "admin"`.
+
+**Request body:**
+```json
+{ "name": "Front Gate" }
+```
+
+**Response (200):**
+```json
+{ "id": "<uuid>", "name": "Front Gate", "isOnline": true, "lastSeen": "...", "createdAt": "..." }
+```
+
+**Response (404):**
+```json
+{ "error": "Device not found." }
+```
+
 ### 7.11 `WS /device/ws` (or `GET /device/commands` polling fallback)
 
 WebSocket endpoint for Arduino device connection. Device authenticates by sending `{ type: "AUTH", token: "<device-token>" }` as the first message.
@@ -366,8 +385,8 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 15. Build **Sign-In screen**: Google login → `POST /auth/google` → store JWT in secure storage. Show "Pending approval" message if not yet approved.
 16. Build **Devices screen** (approved users): lists all devices from `GET /gate/status` with online/offline indicator. Tap a device → opens Device Detail. Long-press a device → shows options menu ("Device Settings" / "Remove Device"). Admin sees **[+ Add Device]** FAB.
 17. Build **Device Detail screen**: shows device name, online/offline status, last-seen timestamp, a ⚙️ settings button, and a **toggle switch button** that calls `POST /gate/toggle`.
-17b. Build **Device Settings screen**: shows device info (name, ID, status, last seen, created), server connection details (host, port, WebSocket endpoint), network/provisioning info. Admin can remove device from this screen.
-18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"). The app auto-detects the phone's WiFi SSID (via `react-native-wifi-reborn`), auto-fills server host/port from `Config.SERVER_URL`, and auto-generates a unique device token by calling `POST /admin/devices`. User only needs to enter the WiFi password and optionally rename the device. On submit, the app POSTs config to the Arduino's `/configure` endpoint. On success, device appears in Devices list.
+17b. Build **Device Settings screen**: shows device info (name, ID, status, last seen, created), server connection details (host, port, WebSocket endpoint), network/provisioning info. Device name is editable inline (tap ✎ → edit → Save). Admin can remove device from this screen.
+18. Build **Add Device screen** (admin only): connect to Arduino's provisioning AP ("GateController"). The app auto-detects the phone's WiFi SSID (via `react-native-wifi-reborn`), auto-fills server host/port from `Config.SERVER_URL`, and auto-generates a unique device token by calling `POST /admin/devices`. User only needs to enter the WiFi password and optionally rename the device. On submit, the app POSTs config to the Arduino's `/configure` endpoint. On success, device appears in Devices list. If the user leaves the wizard before completing Arduino configuration, the registered device is automatically cleaned up from the server.
 19. Build **Users screen** (admin only): list all users from `GET /admin/users`, approve/deny buttons, audit log from `GET /admin/audit`.
 
 **Screen map:**
@@ -413,7 +432,9 @@ Sign In (Google)
 | 15 | Simplified provisioning flow | Add Device screen auto-fills SSID, server, generates token | Arduino receives valid config |
 | 16 | Admin can delete a device | `DELETE /admin/devices/:id` with admin JWT | 200 + device removed from DB |
 | 17 | Deleting device cleans up audit logs | Delete device, check audit logs | Associated logs removed |
+| 18 | Admin can rename a device | `PATCH /admin/devices/:id` with `{ name: "New Name" }` | 200 + updated device |
+| 19 | Abandoned provisioning cleans up | Start Add Device, go back before Arduino config | Registered device auto-deleted |
 
 ---
 
-*Spec version: v1.1 — February 27, 2026*
+*Spec version: v1.2 — February 27, 2026*

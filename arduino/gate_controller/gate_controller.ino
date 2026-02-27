@@ -87,7 +87,8 @@ void sendAck(bool ok);
 // ─────────────────────────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
-  while (!Serial) { ; }
+  unsigned long serialWait = millis();
+  while (!Serial && millis() - serialWait < 3000) { ; }  // wait max 3 s
 
   // Initialise LED matrix
   matrix.begin();

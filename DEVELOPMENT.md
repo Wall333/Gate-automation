@@ -82,9 +82,9 @@ On first boot the Arduino starts as a WiFi Access Point named **GateController**
 
 Config is stored in EEPROM — no secrets in source code. When the Arduino successfully authenticates with the server, it shows a **heart shape** on the built-in 12×8 LED matrix.
 
-To view device settings (connected server, WiFi info, etc.), long-press a device card in the app and select "Device Settings", or tap the ⚙️ icon on the device detail screen.
+To view device settings (connected server, WiFi info, etc.), long-press a device card in the app and select "Device Settings", or tap the ⚙️ icon on the device detail screen. You can rename the device by tapping the ✎ pencil icon on the settings screen.
 
-To factory-reset: hold pin 3 LOW during boot.
+To factory-reset: hold pin 3 LOW during boot (the sketch waits up to 3 seconds for serial, then checks the pin — no Serial Monitor required).
 
 ## Environment Variables
 

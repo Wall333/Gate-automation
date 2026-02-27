@@ -13,7 +13,7 @@ Mobile App  ──►  Server  ──►  Arduino UNO R4 WiFi  ──►  Gate R
 2. The server verifies the Google token and checks whether the user has been approved by an administrator.
 3. Approved users can tap a **Toggle** button, which sends a command through the server to the Arduino.
 4. The Arduino pulses a relay to actuate the gate.
-5. The Arduino shows a **heart** on its built-in LED matrix when connected to the server.
+5. The Arduino shows a **heart** on its built-in LED matrix when connected to the server, and a **sad face** when disconnected.
 
 ## Components
 
