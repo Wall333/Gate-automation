@@ -4,6 +4,18 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.2.2] — 2026-03-01
+
+### Fixed
+- **Sad face LED pattern** — Replaced broken custom pattern with official `LEDMATRIX_EMOJI_SAD` from the Arduino gallery. Now displays a proper frown instead of garbled pixels.
+- **Heart LED pattern** — Replaced custom pattern with official `LEDMATRIX_HEART_BIG` from the Arduino gallery for a clean heart outline.
+
+### Added
+- **Tick on toggle** — When a TOGGLE command is received, the LED matrix briefly shows a ✓ checkmark for 1 second before returning to the heart. Provides immediate visual feedback on the device.
+- **Product roadmap** — Added `docs/ROADMAP.md` with planned features organized by version (v1.3–v2.0 and beyond).
+
+---
+
 ## [v1.2.1] — 2026-02-27
 
 ### Added
