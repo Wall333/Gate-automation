@@ -14,6 +14,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getGateStatus, deleteDevice } from '../api';
 import { useAuth } from '../AuthContext';
+import useGateStateSocket from '../hooks/useGateStateSocket';
 
 export default function DevicesScreen() {
   const navigation = useNavigation();
@@ -33,6 +34,15 @@ export default function DevicesScreen() {
       setRefreshing(false);
     }
   }, []);
+
+  // Real-time gate state updates via WebSocket
+  useGateStateSocket(
+    useCallback(({ deviceId, isOpen }) => {
+      setDevices((prev) =>
+        prev.map((d) => (d.id === deviceId ? { ...d, isOpen } : d)),
+      );
+    }, []),
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -131,6 +141,16 @@ export default function DevicesScreen() {
             {item.isOnline ? 'Online' : 'Offline'}
             {item.lastSeen && ` · Last seen ${formatTime(item.lastSeen)}`}
           </Text>
+          {item.isOnline && (
+            <Text
+              style={[
+                styles.gateState,
+                { color: item.isOpen ? '#FF9500' : '#34C759' },
+              ]}
+            >
+              Gate {item.isOpen ? 'Open' : 'Closed'}
+            </Text>
+          )}
         </View>
       </View>
       <Text style={styles.chevron}>›</Text>
@@ -238,6 +258,11 @@ const styles = StyleSheet.create({
   deviceStatus: {
     fontSize: 13,
     color: '#888',
+    marginTop: 2,
+  },
+  gateState: {
+    fontSize: 13,
+    fontWeight: '600',
     marginTop: 2,
   },
   chevron: {

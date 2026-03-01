@@ -4,6 +4,20 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.3.0] — 2026-03-02
+
+### Added
+- **Gate state detection** — Reed switch on Arduino pin D4 (INPUT_PULLUP) detects whether the gate is open or closed. The switch is debounced (100 ms) and reports state changes over WebSocket.
+- **GATE_STATE WebSocket message** — Arduino sends `{"type":"GATE_STATE","isOpen":true/false}` to the server whenever the reed switch state changes. Server persists the state and broadcasts to all connected app clients.
+- **App WebSocket (`/app/ws`)** — New real-time WebSocket endpoint for mobile/web clients. Receives gate state broadcasts without polling.
+- **Gate state UI** — Device cards on the Devices screen and the Device Detail screen now show "Gate Open" (orange) or "Gate Closed" (green) with lock icons, updated in real time.
+- **`isOpen` field on Device model** — New boolean column in the database to persist gate state across restarts.
+
+### Hardware
+- **Reed switch wiring** — COM → D4, NO → GND. When the magnet (on the gate) is near, D4 reads LOW (closed). When the magnet moves away, D4 reads HIGH (open).
+
+---
+
 ## [v1.2.3] — 2026-03-01
 
 ### Fixed

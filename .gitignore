@@ -33,3 +33,10 @@ android/app/build/
 # iOS
 ios/Pods/
 ios/build/
+
+# Manuals / extracted text
+*.pdf
+gate_motor_manual.txt
+
+# Python virtual environment
+.venv/

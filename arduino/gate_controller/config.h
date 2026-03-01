@@ -7,8 +7,10 @@
 #define CONFIG_H
 
 // ── Hardware ─────────────────────────────────────────────────────────
-#define RELAY_PIN     2                 // Digital pin connected to relay module
-#define PULSE_MS      1000              // Momentary pulse duration (ms)
+#define RELAY_PIN          2            // Digital pin connected to relay module
+#define REED_SWITCH_PIN    4            // Reed switch (INPUT_PULLUP: LOW = closed, HIGH = open)
+#define PULSE_MS           1000         // Momentary pulse duration (ms)
+#define DEBOUNCE_MS        100          // Reed switch debounce time (ms)
 
 // ── Timing ───────────────────────────────────────────────────────────
 #define HEARTBEAT_INTERVAL_MS  30000    // Send heartbeat every 30 s

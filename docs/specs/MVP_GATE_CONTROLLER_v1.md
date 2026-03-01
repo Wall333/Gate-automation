@@ -11,12 +11,14 @@ Build a minimum viable gate controller that allows approved users to remotely to
 - Admin-approved authorization
 - Audit logging of every gate action
 - Device online/offline status
+- Gate open/closed state detection via reed switch
+- Real-time gate state updates to app clients via WebSocket
 
 **Out of scope (future):**
-- True open/close state tracking
 - Multiple gates
 - Guest links / timed access
 - Push notifications, geofencing, BLE
+- Auto-close timer
 
 ---
 
@@ -94,17 +96,23 @@ Mobile                      Server                       Google
 The Arduino initiates and maintains a WebSocket connection to the server. This avoids NAT/port-forwarding issues since the device connects outward.
 
 ```
-Arduino                           Server
-  │                                 │
-  │── WS connect + device_token ──►│  (authentication)
-  │◄── "authenticated" ────────────│
-  │                                 │
-  │◄── { type: "TOGGLE" } ────────│  (server relays user request)
-  │── { type: "ACK", ok: true } ──►│
-  │                                 │
-  │── { type: "HEARTBEAT" } ──────►│  (every 30 seconds)
-  │◄── { type: "PONG" } ──────────│
+Arduino                           Server                          App
+  │                                 │                               │
+  │── WS connect + device_token ──►│  (authentication)              │
+  │◄── "authenticated" ────────────│                               │
+  │                                 │                               │
+  │◄── { type: "TOGGLE" } ────────│  (server relays user request)  │
+  │── { type: "ACK", ok: true } ──►│                               │
+  │                                 │                               │
+  │── { type: "HEARTBEAT" } ──────►│  (every 30 seconds)           │
+  │◄── { type: "PONG" } ──────────│                               │
+  │                                 │                               │
+  │── { type: "GATE_STATE",  ─────►│  (reed switch change)         │
+  │    isOpen: true/false }         │── broadcast GATE_STATE ──────►│
 ```
+
+**App-facing WebSocket (`/app/ws`):**
+Mobile/web clients connect to `/app/ws` for real-time updates. The server broadcasts `GATE_STATE` messages whenever a device reports a state change. No authentication is required on this endpoint (stateless broadcast).
 
 - Server tracks `lastSeen` on each heartbeat.
 - If no heartbeat received for 90 seconds → device marked offline.
@@ -141,6 +149,7 @@ If WebSocket proves unreliable on the Arduino hardware, fall back to:
 | name      | String   | e.g. "Front Gate" |
 | tokenHash | String   | bcrypt hash of device token |
 | isOnline  | Boolean  | Derived from lastSeen |
+| isOpen    | Boolean  | Gate open/closed state from reed switch (default: false) |
 | lastSeen  | DateTime | Updated on heartbeat |
 | createdAt | DateTime | |
 
@@ -214,7 +223,7 @@ Return device online/offline status. Requires valid JWT.
 ```json
 {
   "devices": [
-    { "id": "...", "name": "Front Gate", "isOnline": true, "lastSeen": "2026-02-26T12:00:00Z" }
+    { "id": "...", "name": "Front Gate", "isOnline": true, "isOpen": false, "lastSeen": "2026-02-26T12:00:00Z" }
   ]
 }
 ```
@@ -398,6 +407,7 @@ WebSocket endpoint for Arduino device connection. Device authenticates by sendin
 11. Arduino sketch: provisioning mode (WiFi AP + HTTP config server), EEPROM storage, factory-reset pin.
 12. Normal mode: read config from EEPROM, WiFi connect, WebSocket client, authenticate with device token.
 13. Handle incoming TOGGLE → momentary relay pulse (1 s) → send ACK. Send HEARTBEAT every 30 s; auto-reconnect on disconnect. Show heart on built-in 12×8 LED matrix when authenticated; clear on disconnect.
+13b. Read reed switch on pin D4 (INPUT_PULLUP, debounced 100 ms). On state change, send `{ type: "GATE_STATE", isOpen: true/false }` to server. LOW = gate closed (magnet near), HIGH = gate open.
 
 ### Phase 4 — Mobile App
 14. Initialize React Native project in `/mobile`; install navigation, secure storage, Google Sign-In.
@@ -459,4 +469,4 @@ Sign In (Google)
 
 ---
 
-*Spec version: v1.2.1 — February 27, 2026*
+*Spec version: v1.3.0 — March 2, 2026*
