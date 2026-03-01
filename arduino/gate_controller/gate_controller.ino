@@ -206,6 +206,11 @@ void connectWiFi() {
   Serial.print(F("[wifi] Connecting to "));
   Serial.println(cfg.ssid);
 
+  // Ensure WiFi module is in a clean state (AP mode may persist across MCU reset)
+  WiFi.disconnect();
+  WiFi.end();
+  delay(1000);
+
   WiFi.begin(cfg.ssid, cfg.password);
 
   int attempts = 0;
