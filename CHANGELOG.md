@@ -4,6 +4,15 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.2.3] — 2026-03-01
+
+### Fixed
+- **Device token truncation** — The EEPROM token buffer was 64 bytes but the server generates 64-char hex tokens (needs 65 bytes with null terminator). This caused authentication to always fail. Bumped `deviceToken` from `char[64]` to `char[65]`.
+- **WiFi not connecting after provisioning** — The ESP32 WiFi co-processor could stay in AP mode after MCU reset. Added `WiFi.disconnect()` + `WiFi.end()` before `WiFi.begin()` to ensure a clean station-mode connection.
+- **Provisioning soft-lock** — The "Send Configuration to Arduino" step now blocks back navigation (both gesture/hardware back and the "← Back to form" link) while the config is being sent, preventing errors from interrupted requests.
+
+---
+
 ## [v1.2.2] — 2026-03-01
 
 ### Fixed

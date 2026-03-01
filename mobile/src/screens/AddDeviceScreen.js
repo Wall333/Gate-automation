@@ -40,8 +40,14 @@ export default function AddDeviceScreen() {
   const [registeredDeviceId, setRegisteredDeviceId] = useState(null);
 
   // Clean up: delete device from server if user leaves before finishing Arduino config
+  // Block navigation while sending config to Arduino
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', () => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (step === 'connecting') {
+        // Prevent leaving while config is being sent
+        e.preventDefault();
+        return;
+      }
       if (registeredDeviceId && step !== 'done') {
         deleteDevice(registeredDeviceId).catch(() => {});
       }
@@ -216,21 +222,23 @@ export default function AddDeviceScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={{ marginTop: 16 }}
-          onPress={async () => {
-            // Clean up the registered device since user is going back
-            if (registeredDeviceId) {
-              try { await deleteDevice(registeredDeviceId); } catch { /* ignore */ }
-              setRegisteredDeviceId(null);
-            }
-            setDeviceToken(null);
-            setStep('form');
-            setError(null);
-          }}
-        >
-          <Text style={{ color: '#4285F4', fontSize: 14 }}>← Back to form</Text>
-        </TouchableOpacity>
+        {step !== 'connecting' && (
+          <TouchableOpacity
+            style={{ marginTop: 16 }}
+            onPress={async () => {
+              // Clean up the registered device since user is going back
+              if (registeredDeviceId) {
+                try { await deleteDevice(registeredDeviceId); } catch { /* ignore */ }
+                setRegisteredDeviceId(null);
+              }
+              setDeviceToken(null);
+              setStep('form');
+              setError(null);
+            }}
+          >
+            <Text style={{ color: '#4285F4', fontSize: 14 }}>← Back to form</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }

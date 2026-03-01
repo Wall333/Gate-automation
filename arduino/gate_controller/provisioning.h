@@ -7,13 +7,13 @@
  * credentials, server address, and device token.  The Arduino saves them
  * to EEPROM and reboots into normal operating mode.
  *
- * EEPROM layout (total ~230 bytes):
+ * EEPROM layout (total ~231 bytes):
  *   [0..3]      Magic bytes  "GATE"
  *   [4..35]     SSID         (32 bytes, null-terminated)
  *   [36..99]    Password     (64 bytes, null-terminated)
  *   [100..163]  Server host  (64 bytes, null-terminated)
  *   [164..165]  Server port  (uint16_t, little-endian)
- *   [166..229]  Device token (64 bytes, null-terminated)
+ *   [166..230]  Device token (65 bytes, null-terminated)
  */
 
 #ifndef PROVISIONING_H
@@ -25,7 +25,7 @@
 #include "config.h"
 
 // ── EEPROM addresses ─────────────────────────────────────────────────
-#define EEPROM_SIZE       230
+#define EEPROM_SIZE       231
 #define ADDR_MAGIC        0
 #define ADDR_SSID         4
 #define ADDR_PASSWORD     36
@@ -42,8 +42,8 @@ struct DeviceConfig {
   char     password[64];
   char     serverHost[64];
   uint16_t serverPort;
-  char     deviceToken[64];
-  bool     valid;           // true if loaded successfully from EEPROM
+  char     deviceToken[65];  // 64 hex chars + null terminator
+  bool     valid;             // true if loaded successfully from EEPROM
 };
 
 static DeviceConfig _config;
@@ -98,10 +98,10 @@ bool loadConfig() {
   _config.serverPort = (hi << 8) | lo;
 
   // Read device token
-  for (int i = 0; i < 64; i++) {
+  for (int i = 0; i < 65; i++) {
     _config.deviceToken[i] = EEPROM.read(ADDR_DEVICE_TOKEN + i);
   }
-  _config.deviceToken[63] = '\0';
+  _config.deviceToken[64] = '\0';
 
   _config.valid = true;
 
@@ -109,6 +109,7 @@ bool loadConfig() {
   Serial.print(F("  SSID:   ")); Serial.println(_config.ssid);
   Serial.print(F("  Server: ")); Serial.print(_config.serverHost);
   Serial.print(F(":")); Serial.println(_config.serverPort);
+  Serial.print(F("  Token length: ")); Serial.println(strlen(_config.deviceToken));
   Serial.println(F("  Token:  ****"));
 
   return true;
@@ -143,7 +144,7 @@ void saveConfig(const DeviceConfig& cfg) {
   EEPROM.write(ADDR_SERVER_PORT + 1, (cfg.serverPort >> 8) & 0xFF);
 
   // Write device token
-  for (int i = 0; i < 64; i++) {
+  for (int i = 0; i < 65; i++) {
     EEPROM.write(ADDR_DEVICE_TOKEN + i, cfg.deviceToken[i]);
   }
 
