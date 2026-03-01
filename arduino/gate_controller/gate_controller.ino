@@ -88,6 +88,12 @@ unsigned long lastReconnect  = 0;
 bool          wsConnected    = false;
 bool          authenticated  = false;
 
+// ── Reed switch (gate state) ─────────────────────────────────────────
+bool          lastGateOpen       = false;  // Last reported gate state
+bool          gateStateReady     = false;  // True after first stable read
+unsigned long lastDebounceTime   = 0;
+bool          lastRawReading     = false;
+
 // ── Forward declarations ─────────────────────────────────────────────
 void connectWiFi();
 void connectWebSocket();
@@ -96,6 +102,8 @@ void sendHeartbeat();
 void handleMessage(const String& message);
 void pulseRelay();
 void sendAck(bool ok);
+void sendGateState(bool isOpen);
+void checkReedSwitch();
 
 // ─────────────────────────────────────────────────────────────────────
 // setup()
@@ -113,12 +121,16 @@ void setup() {
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);
 
+  pinMode(REED_SWITCH_PIN, INPUT_PULLUP);  // LOW = gate closed (magnet near)
+
   pinMode(RESET_PIN, INPUT_PULLUP);
 
   Serial.println(F(""));
   Serial.println(F("─── Gate Controller ───"));
   Serial.print(F("Relay pin: "));
   Serial.println(RELAY_PIN);
+  Serial.print(F("Reed switch pin: "));
+  Serial.println(REED_SWITCH_PIN);
   Serial.print(F("Pulse duration: "));
   Serial.print(PULSE_MS);
   Serial.println(F(" ms"));
@@ -187,6 +199,11 @@ void loop() {
   if (authenticated && (now - lastHeartbeat >= HEARTBEAT_INTERVAL_MS)) {
     sendHeartbeat();
     lastHeartbeat = now;
+  }
+
+  // Check reed switch for gate state changes
+  if (authenticated) {
+    checkReedSwitch();
   }
 
   // Check if connection was lost
@@ -389,4 +406,62 @@ void pulseRelay() {
   delay(PULSE_MS);
   digitalWrite(RELAY_PIN, LOW);
   Serial.println(F("[relay] OFF"));
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Check reed switch with debounce and report state changes
+// ─────────────────────────────────────────────────────────────────────
+void checkReedSwitch() {
+  bool rawReading = (digitalRead(REED_SWITCH_PIN) == HIGH);  // HIGH = open (no magnet)
+
+  // Reset debounce timer when reading changes
+  if (rawReading != lastRawReading) {
+    lastDebounceTime = millis();
+    lastRawReading = rawReading;
+  }
+
+  // Wait for stable reading
+  if ((millis() - lastDebounceTime) < DEBOUNCE_MS) {
+    return;
+  }
+
+  // First stable read after boot — send initial state
+  if (!gateStateReady) {
+    gateStateReady = true;
+    lastGateOpen = rawReading;
+    Serial.print(F("[reed] Initial gate state: "));
+    Serial.println(rawReading ? F("OPEN") : F("CLOSED"));
+    sendGateState(rawReading);
+    return;
+  }
+
+  // Only report on change
+  if (rawReading != lastGateOpen) {
+    lastGateOpen = rawReading;
+    Serial.print(F("[reed] Gate state changed: "));
+    Serial.println(rawReading ? F("OPEN") : F("CLOSED"));
+    sendGateState(rawReading);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Send GATE_STATE message over WebSocket
+// ─────────────────────────────────────────────────────────────────────
+void sendGateState(bool isOpen) {
+  if (!wsConnected || !authenticated) return;
+
+  JsonDocument doc;
+  doc["type"]   = "GATE_STATE";
+  doc["isOpen"] = isOpen;
+
+  String payload;
+  serializeJson(doc, payload);
+
+  wsClient->beginMessage(TYPE_TEXT);
+  wsClient->print(payload);
+  wsClient->endMessage();
+
+  Serial.print(F("[ws] GATE_STATE sent (isOpen="));
+  Serial.print(isOpen ? "true" : "false");
+  Serial.println(F(")"));
 }

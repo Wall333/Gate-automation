@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,26 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { toggleGate } from '../api';
+import useGateStateSocket from '../hooks/useGateStateSocket';
 
 export default function DeviceDetailScreen({ route }) {
   const navigation = useNavigation();
   const { device } = route.params;
   const [toggling, setToggling] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [isOpen, setIsOpen] = useState(device.isOpen ?? false);
+
+  // Real-time gate state updates via WebSocket
+  useGateStateSocket(
+    useCallback(
+      ({ deviceId, isOpen: open }) => {
+        if (deviceId === device.id) {
+          setIsOpen(open);
+        }
+      },
+      [device.id],
+    ),
+  );
 
   async function handleToggle() {
     setToggling(true);
@@ -66,6 +80,22 @@ export default function DeviceDetailScreen({ route }) {
             {device.isOnline ? 'Online' : 'Offline'}
           </Text>
         </View>
+
+        {device.isOnline && (
+          <View style={styles.gateStateRow}>
+            <Text style={styles.gateStateIcon}>
+              {isOpen ? '🔓' : '🔒'}
+            </Text>
+            <Text
+              style={[
+                styles.gateStateText,
+                { color: isOpen ? '#FF9500' : '#34C759' },
+              ]}
+            >
+              Gate {isOpen ? 'Open' : 'Closed'}
+            </Text>
+          </View>
+        )}
 
         {device.lastSeen && (
           <Text style={styles.lastSeen}>
@@ -179,6 +209,19 @@ const styles = StyleSheet.create({
   lastSeen: {
     fontSize: 13,
     color: '#888',
+  },
+  gateStateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  gateStateIcon: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  gateStateText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   toggleButton: {
     backgroundColor: '#4285F4',

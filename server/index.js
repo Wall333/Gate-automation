@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const seedAdmin = require('./seed');
-const { initDeviceWebSocket } = require('./lib/deviceManager');
+const { initDeviceWebSocket, initAppWebSocket } = require('./lib/deviceManager');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,4 +32,5 @@ server.listen(PORT, async () => {
   console.log(`[server] listening on http://localhost:${PORT}`);
   await seedAdmin();
   initDeviceWebSocket(server);
+  initAppWebSocket(server);
 });

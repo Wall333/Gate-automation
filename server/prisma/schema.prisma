@@ -30,6 +30,7 @@ model Device {
   name      String
   tokenHash String
   isOnline  Boolean  @default(false)
+  isOpen    Boolean  @default(false)
   lastSeen  DateTime?
   createdAt DateTime @default(now())
 

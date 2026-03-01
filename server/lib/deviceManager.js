@@ -3,8 +3,11 @@ const bcrypt = require('bcryptjs');
 const prisma = require('./prisma');
 
 // ── State ────────────────────────────────────────────────
-// Map of deviceId → WebSocket connection
+// Map of deviceId → WebSocket connection (device connections)
 const connectedDevices = new Map();
+
+// Set of WebSocket connections from mobile/web app clients
+const appClients = new Set();
 
 // How long before we consider a device offline (ms)
 const OFFLINE_THRESHOLD_MS = 90 * 1000;
@@ -88,7 +91,22 @@ function initDeviceWebSocket(httpServer) {
         ws.send(JSON.stringify({ type: 'PONG' }));
         return;
       }
-
+      // ── GATE_STATE (reed switch report) ────────────────
+      if (msg.type === 'GATE_STATE') {
+        const isOpen = msg.isOpen === true;
+        await prisma.device.update({
+          where: { id: authenticatedDeviceId },
+          data: { isOpen },
+        });
+        // Broadcast to all connected app clients
+        broadcastToAppClients({
+          type: 'GATE_STATE',
+          deviceId: authenticatedDeviceId,
+          isOpen,
+        });
+        console.log(`[ws] Device ${authenticatedDeviceId} gate state: ${isOpen ? 'OPEN' : 'CLOSED'}`);
+        return;
+      }
       // ── ACK (response to a TOGGLE we sent) ──────────
       if (msg.type === 'ACK') {
         // Resolve any pending toggle promise
@@ -190,4 +208,41 @@ function isDeviceConnected(deviceId) {
   return ws && ws.readyState === 1;
 }
 
-module.exports = { initDeviceWebSocket, sendToggle, isDeviceConnected };
+// ── Broadcast to all connected app clients ──────────────
+function broadcastToAppClients(message) {
+  const payload = JSON.stringify(message);
+  for (const client of appClients) {
+    if (client.readyState === 1) {
+      client.send(payload);
+    }
+  }
+}
+
+// ── App-facing WebSocket (real-time gate state to mobile) ─
+function initAppWebSocket(httpServer) {
+  const wss = new WebSocketServer({
+    server: httpServer,
+    path: '/app/ws',
+  });
+
+  console.log('[ws] App WebSocket server ready on /app/ws');
+
+  wss.on('connection', (ws) => {
+    appClients.add(ws);
+    console.log(`[ws/app] Client connected (${appClients.size} total)`);
+
+    ws.on('close', () => {
+      appClients.delete(ws);
+      console.log(`[ws/app] Client disconnected (${appClients.size} total)`);
+    });
+
+    ws.on('error', (err) => {
+      console.error('[ws/app] Error:', err.message);
+      appClients.delete(ws);
+    });
+  });
+
+  return wss;
+}
+
+module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected };

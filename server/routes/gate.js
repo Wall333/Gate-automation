@@ -69,6 +69,7 @@ router.get('/status', async (_req, res) => {
         id: true,
         name: true,
         isOnline: true,
+        isOpen: true,
         lastSeen: true,
       },
     });

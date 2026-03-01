@@ -1,13 +1,13 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.2.1  
-> **Last updated:** February 27, 2026
+> **Current version:** v1.3.0  
+> **Last updated:** March 2, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.
 
 ---
 
-## What We Have Today (v1.0 – v1.2.1)
+## What We Have Today (v1.0 – v1.3.0)
 
 The Gate Controller is a smart gate system with three components: an **Android app**, a **cloud server**, and an **Arduino board** wired to the gate's relay. Here's what's already built:
 
@@ -15,14 +15,16 @@ The Gate Controller is a smart gate system with three components: an **Android a
 - Open/close the gate from your phone, anywhere in the world
 - Add and configure gate devices over WiFi (no manual setup)
 - See which devices are online and when they were last active
+- **Gate state detection** — a magnetic reed switch on the gate reports whether it's open or closed, shown in the app in real time
+- **Real-time app updates** — gate state changes pushed to all connected app clients via WebSocket (no polling)
 - Rename devices, view connection details
 - Full audit log of every gate open/close (who, when, success/fail)
 - Manage users: approve, deny, or remove
-- LED feedback on the Arduino (heart = connected, sad face = disconnected)
+- LED feedback on the Arduino (heart = connected, sad face = disconnected, tick = toggle acknowledged)
 
 ---
 
-## v1.3 — Stay in the Loop
+## v1.4 — Stay in the Loop
 
 *Know what's happening at your gate without opening the app.*
 
@@ -34,7 +36,7 @@ See the last few gate events right on the main screen when you open the app — 
 
 ---
 
-## v1.4 — Let People In
+## v1.5 — Let People In
 
 *Share access without sharing your account.*
 
@@ -46,15 +48,12 @@ The app will follow your phone's system theme. If you use dark mode on your phon
 
 ---
 
-## v1.5 — Know Your Gate
+## v1.6 — Automatic Gate
 
-*See the actual state of your gate and let it take care of itself.*
-
-### Gate Position Sensing
-Right now the app shows whether the Arduino is *online*, but not whether the gate is actually *open or closed*. By adding a small magnetic sensor to the gate, the app will show the real physical state — so you'll always know if you left it open.
+*Let the gate take care of itself.*
 
 ### Auto-Close Timer
-Forgot to close the gate? With auto-close, the gate will automatically shut itself after a time you set (30 seconds, 1 minute, etc.). Configurable per gate from the app. Requires the gate position sensor above.
+Forgot to close the gate? With auto-close, the gate will automatically shut itself after a time you set (30 seconds, 1 minute, etc.). Configurable per gate from the app. Uses the reed switch gate state detection to know when to trigger.
 
 ---
 
