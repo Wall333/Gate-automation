@@ -12,17 +12,20 @@ const appClients = new Set();
 // How long before we consider a device offline (ms)
 const OFFLINE_THRESHOLD_MS = 90 * 1000;
 
+// ── WebSocket servers (noServer mode for multi-path routing) ────
+let deviceWss = null;
+let appWss = null;
+
 // ── Initialise WebSocket server on existing HTTP server ──
 function initDeviceWebSocket(httpServer) {
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path: '/device/ws',
+  deviceWss = new WebSocketServer({
+    noServer: true,
     perMessageDeflate: true, // Accept RSV1 (compressed) frames from Arduino
   });
 
   console.log('[ws] Device WebSocket server ready on /device/ws');
 
-  wss.on('connection', (ws) => {
+  deviceWss.on('connection', (ws) => {
     let authenticatedDeviceId = null;
     let heartbeatTimer = null;
 
@@ -140,7 +143,7 @@ function initDeviceWebSocket(httpServer) {
     });
   });
 
-  return wss;
+  return deviceWss;
 }
 
 // ── Authenticate device by raw token ─────────────────────
@@ -220,14 +223,11 @@ function broadcastToAppClients(message) {
 
 // ── App-facing WebSocket (real-time gate state to mobile) ─
 function initAppWebSocket(httpServer) {
-  const wss = new WebSocketServer({
-    server: httpServer,
-    path: '/app/ws',
-  });
+  appWss = new WebSocketServer({ noServer: true });
 
   console.log('[ws] App WebSocket server ready on /app/ws');
 
-  wss.on('connection', (ws) => {
+  appWss.on('connection', (ws) => {
     appClients.add(ws);
     console.log(`[ws/app] Client connected (${appClients.size} total)`);
 
@@ -242,7 +242,24 @@ function initAppWebSocket(httpServer) {
     });
   });
 
-  return wss;
+  // Single upgrade handler routes requests to the correct WSS
+  httpServer.on('upgrade', (request, socket, head) => {
+    const { pathname } = new URL(request.url, 'ws://base');
+
+    if (pathname === '/device/ws') {
+      deviceWss.handleUpgrade(request, socket, head, (ws) => {
+        deviceWss.emit('connection', ws, request);
+      });
+    } else if (pathname === '/app/ws') {
+      appWss.handleUpgrade(request, socket, head, (ws) => {
+        appWss.emit('connection', ws, request);
+      });
+    } else {
+      socket.destroy();
+    }
+  });
+
+  return appWss;
 }
 
 module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected };
