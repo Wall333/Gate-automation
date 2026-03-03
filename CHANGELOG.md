@@ -4,6 +4,14 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.1] — 2026-03-03
+
+### Fixed
+- **Activity Feed crash** — Fixed named import → default import for `useGateStateSocket` in `ActivityFeedScreen.js`.
+- **Node.js 24 build failure** — Removed explicit `expo-constants` plugin entry from `app.json` (auto-links without it).
+
+---
+
 ## [v1.5.0] — 2026-03-03
 
 ### Added
@@ -18,10 +26,6 @@ All notable changes to the Gate Controller project are documented here.
 - **`expo-notifications`** — Push notification permissions, token registration, foreground alert handling, Android notification channel.
 - **Expo Push API** — Server sends push notifications via Expo's push service (`https://exp.host/--/api/v2/push/send`). No Firebase project or service account needed. Invalid tokens auto-cleaned.
 - **About screen** — New "About" tab showing app version, build number, signed-in user, and project links. Version is read from `app.json` at build time via `expo-constants`.
-
-### Fixed
-- **Activity Feed crash** — Fixed named import `{ useGateStateSocket }` → default import `useGateStateSocket` in `ActivityFeedScreen.js`. The named import resolved to `undefined`, crashing the app when navigating to the Activity tab.
-- **Node.js 24 build failure** — Removed explicit `expo-constants` plugin entry from `app.json`. The package auto-links without it; the plugin entry caused `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING` on Node.js 24.
 
 ### Changed
 - **`useGateStateSocket` hook** — Now accepts a third callback `onGateEvent` for real-time activity feed updates.
