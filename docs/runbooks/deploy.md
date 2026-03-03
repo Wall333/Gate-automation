@@ -88,7 +88,7 @@ DATABASE_URL=file:./prod.db
 
 > **Note:** `DEVICE_TOKEN` is no longer needed as a server environment variable. Device tokens are now auto-generated per device via the mobile app's "Add Device" flow (which calls `POST /admin/devices`).
 
-> **Note:** Push notifications use the **Expo Push API** — no Firebase project or service account is required. No additional environment variables are needed for push notifications to work.
+> **Note:** Push notifications use the **Expo Push API** — no Firebase Admin SDK or service account is needed on the server. However, the **Android build** requires a `google-services.json` file from a Firebase project (for FCM transport). This file is placed at `mobile/android/app/google-services.json` and is excluded from git.
 
 ### Step 6: Run Database Migration
 

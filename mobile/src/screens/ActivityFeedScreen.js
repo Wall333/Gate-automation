@@ -61,6 +61,7 @@ export default function ActivityFeedScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [tick, setTick] = useState(0); // forces timestamp re-render
   const isMounted = useRef(true);
 
   // ── Fetch initial events ─────────────────────────────
@@ -86,6 +87,20 @@ export default function ActivityFeedScreen({ navigation }) {
     fetchEvents();
     return () => { isMounted.current = false; };
   }, [fetchEvents]);
+
+  // ── Auto-poll every 30s (fallback for missed WS events) ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isMounted.current) fetchEvents();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchEvents]);
+
+  // ── Refresh timestamps every 30s ─────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Pull to refresh ──────────────────────────────────
   const onRefresh = useCallback(() => {
@@ -146,6 +161,7 @@ export default function ActivityFeedScreen({ navigation }) {
   return (
     <FlatList
       data={events}
+      extraData={tick}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => <EventRow item={item} />}
       contentContainerStyle={events.length === 0 ? styles.center : styles.list}

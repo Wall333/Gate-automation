@@ -2,7 +2,7 @@
  * Push notification service using Expo Push API.
  *
  * Sends push notifications to Expo push tokens via
- * https://exp.host/--/api/v2/push/send — no Firebase project needed.
+ * https://exp.host/--/api/v2/push/send — no Firebase Admin SDK needed server-side
  */
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';

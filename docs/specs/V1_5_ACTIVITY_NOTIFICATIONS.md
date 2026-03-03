@@ -1,8 +1,8 @@
 # v1.5 — Stay in the Loop: Activity Feed & Notifications
 
-> **Version:** v1.5.0  
+> **Version:** v1.5.3  
 > **Date:** March 3, 2026  
-> **Status:** In development
+> **Status:** Released
 
 ---
 
@@ -147,7 +147,8 @@ Register or update the user's Expo push token. Called by the mobile app on start
 
 ### Provider: Expo Push API
 
-- **Why Expo Push:** Free, zero config, works with `expo-notifications` natively, supports Android and iOS via a single API. No Firebase project or service account needed.
+- **Why Expo Push:** Free, works with `expo-notifications` natively, supports Android and iOS via a single API. No Firebase Admin SDK or service account needed on the server.
+- **Android transport:** Firebase Cloud Messaging (FCM) is used as the transport layer on Android. A Firebase project is required and `google-services.json` must be placed at `mobile/android/app/` (excluded from git via `.gitignore`). The Google Services gradle plugin (`com.google.gms:google-services:4.4.2`) is wired into both `build.gradle` files.
 - **Server implementation:** Simple HTTP POST to `https://exp.host/--/api/v2/push/send`. No additional npm dependencies required (uses native `fetch`).
 
 ### Flow

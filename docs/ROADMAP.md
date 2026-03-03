@@ -1,6 +1,6 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.5.0  
+> **Current version:** v1.5.3  
 > **Last updated:** March 3, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.
@@ -19,7 +19,7 @@ The Gate Controller is a smart gate system with three components: an **Android a
 - **Real-time app updates** — gate state changes pushed to all connected app clients via WebSocket (no polling)
 - **Over-the-air firmware updates** — upload new firmware through the app and push it to the Arduino over WiFi (no USB needed)
 - **Activity feed** — timeline of every gate open/close event (app-triggered with user name, or manual/remote). Visible to all approved users
-- **Push notifications** — choose to be notified when the gate opens, closes, or has been open too long. Per-user preferences
+- **Push notifications** — choose to be notified when the gate opens, closes, or has been open too long. Per-user preferences. Delivered via Expo Push API with Firebase Cloud Messaging as the Android transport
 - Rename devices, view connection details
 - Full audit log of every gate open/close (who, when, success/fail)
 - Manage users: approve, deny, or remove
@@ -31,7 +31,7 @@ The Gate Controller is a smart gate system with three components: an **Android a
 
 *Know what's happening at your gate without opening the app.*
 
-Activity feed (all users) showing every gate open/close event with user attribution for app toggles and "via remote / button" for manual use. Push notifications via Expo Push API with per-user preferences: notify on open, notify on close, and alert if gate open too long (configurable 1–30 min). See [V1_5_ACTIVITY_NOTIFICATIONS.md](specs/V1_5_ACTIVITY_NOTIFICATIONS.md) for full spec.
+Activity feed (all users) showing every gate open/close event with user attribution for app toggles and "via remote / button" for manual use. Auto-refreshes every 30 seconds plus real-time WebSocket updates. Push notifications via Expo Push API (with Firebase Cloud Messaging as Android transport) with per-user preferences: notify on open, notify on close, and alert if gate open too long (configurable 1–30 min). See [V1_5_ACTIVITY_NOTIFICATIONS.md](specs/V1_5_ACTIVITY_NOTIFICATIONS.md) for full spec.
 
 ---
 

@@ -29,6 +29,7 @@ coverage/
 # Android
 android/.gradle/
 android/app/build/
+**/google-services.json
 
 # iOS
 ios/Pods/
