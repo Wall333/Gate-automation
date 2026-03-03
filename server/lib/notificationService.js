@@ -9,12 +9,15 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 /**
  * Send a push notification to an Expo push token.
- * Returns true if sent, false if skipped or failed.
+ * Returns:
+ *   'ok'      — sent successfully
+ *   'expired' — token is permanently invalid (DeviceNotRegistered), caller should remove it
+ *   'error'   — temporary/config failure, caller should NOT remove the token
  */
 async function sendPush(token, title, body, data = {}) {
   if (!token || !token.startsWith('ExponentPushToken[')) {
     console.log(`[notify] Invalid Expo push token: ${token?.slice(0, 20) ?? 'null'}`);
-    return false;
+    return 'expired';
   }
 
   try {
@@ -40,20 +43,21 @@ async function sendPush(token, title, body, data = {}) {
 
     if (ticket.status === 'ok') {
       console.log(`[notify] Sent: "${title}" to token ...${token.slice(-8)}`);
-      return true;
+      return 'ok';
     }
 
-    // Token is no longer valid
+    // Token is no longer valid — caller should remove it
     if (ticket.details?.error === 'DeviceNotRegistered') {
       console.log(`[notify] Token expired ...${token.slice(-8)} — should be removed`);
-      return false;
+      return 'expired';
     }
 
+    // Any other error (FCM config, rate limit, etc.) — keep the token
     console.error(`[notify] Push error:`, ticket.message || ticket);
-    return false;
+    return 'error';
   } catch (err) {
     console.error('[notify] Send error:', err.message);
-    return false;
+    return 'error';
   }
 }
 

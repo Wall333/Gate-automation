@@ -355,14 +355,15 @@ async function sendGateNotifications(deviceId, deviceName, eventType, triggeredB
     const data = { type: `GATE_${eventType}`, deviceId };
 
     for (const pref of prefs) {
-      const sent = await sendPush(pref.fcmToken, title, body, data);
-      if (!sent && pref.fcmToken) {
-        // Token might be invalid — clear it
+      const result = await sendPush(pref.fcmToken, title, body, data);
+      if (result === 'expired' && pref.fcmToken) {
+        // Token is permanently invalid — clear it
         try {
           await prisma.notificationPreference.update({
             where: { id: pref.id },
             data: { fcmToken: null },
           });
+          console.log(`[notify] Cleared expired token for user ${pref.userId}`);
         } catch { /* ignore */ }
       }
     }
