@@ -31,7 +31,7 @@ The Gate Controller is a smart gate system with three components: an **Android a
 
 *Know what's happening at your gate without opening the app.*
 
-Activity feed (all users) showing every gate open/close event with user attribution for app toggles and "via remote / button" for manual use. Push notifications via Firebase Cloud Messaging with per-user preferences: notify on open, notify on close, and alert if gate open too long (configurable 1–30 min). See [V1_5_ACTIVITY_NOTIFICATIONS.md](specs/V1_5_ACTIVITY_NOTIFICATIONS.md) for full spec.
+Activity feed (all users) showing every gate open/close event with user attribution for app toggles and "via remote / button" for manual use. Push notifications via Expo Push API with per-user preferences: notify on open, notify on close, and alert if gate open too long (configurable 1–30 min). See [V1_5_ACTIVITY_NOTIFICATIONS.md](specs/V1_5_ACTIVITY_NOTIFICATIONS.md) for full spec.
 
 ---
 
@@ -92,10 +92,8 @@ A one-tap button on your Android home screen to toggle the gate without opening 
 ### Geofencing
 The gate automatically opens when your phone gets close to home. Uses your phone's GPS to detect when you're approaching — no button press needed. Opt-in, with a configurable distance.
 
-### Over-the-Air Arduino Updates
-Update the Arduino's code over WiFi instead of plugging in a USB cable. Useful once the Arduino is installed in a hard-to-reach spot.
-
-> **Note:** OTA is now available as of v1.4.0. See the Firmware Update section in Device Settings.
+### ~~Over-the-Air Arduino Updates~~ ✅ Done (v1.4.0)
+~~Update the Arduino's code over WiFi instead of plugging in a USB cable.~~ Implemented — upload firmware in the app and push to the Arduino from Device Settings.
 
 ---
 

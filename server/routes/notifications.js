@@ -70,14 +70,14 @@ router.put('/notification-preferences', async (req, res) => {
   }
 });
 
-// ── POST /user/fcm-token ─────────────────────────────────────────
-const fcmSchema = z.object({
-  fcmToken: z.string().min(1),
+// ── POST /user/push-token ─────────────────────────────────────────
+const pushTokenSchema = z.object({
+  pushToken: z.string().min(1),
 });
 
-router.post('/fcm-token', async (req, res) => {
+router.post('/push-token', async (req, res) => {
   try {
-    const parsed = fcmSchema.safeParse(req.body);
+    const parsed = pushTokenSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0].message });
     }
@@ -86,16 +86,16 @@ router.post('/fcm-token', async (req, res) => {
       where: { userId: req.user.id },
       create: {
         userId: req.user.id,
-        fcmToken: parsed.data.fcmToken,
+        fcmToken: parsed.data.pushToken,  // DB column name kept for compat
       },
       update: {
-        fcmToken: parsed.data.fcmToken,
+        fcmToken: parsed.data.pushToken,
       },
     });
 
     return res.json({ ok: true });
   } catch (err) {
-    console.error('[user/fcm-token] error:', err);
+    console.error('[user/push-token] error:', err);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });

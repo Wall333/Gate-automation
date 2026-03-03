@@ -51,7 +51,7 @@ Per-user notification settings.
 | notifyOnOpen     | Boolean  | Notify when gate opens (default: `false`) |
 | notifyOnClose    | Boolean  | Notify when gate closes (default: `false`) |
 | openTooLongMin   | Int?     | Notify if gate open longer than N minutes. `null` = disabled |
-| fcmToken         | String?  | Firebase Cloud Messaging token for this user's device |
+| fcmToken         | String?  | Expo push token (column name kept for compat) |
 | updatedAt        | DateTime | |
 
 ---
@@ -125,14 +125,14 @@ Update the current user's notification preferences. Requires valid JWT.
 }
 ```
 
-### 3.4 `POST /user/fcm-token`
+### 3.4 `POST /user/push-token`
 
-Register or update the user's FCM push token. Called by the mobile app on startup and when the token refreshes. Requires valid JWT.
+Register or update the user's Expo push token. Called by the mobile app on startup and when the token refreshes. Requires valid JWT.
 
 **Request:**
 ```json
 {
-  "fcmToken": "<firebase-cloud-messaging-token>"
+  "pushToken": "<expo-push-token>"
 }
 ```
 
@@ -145,10 +145,10 @@ Register or update the user's FCM push token. Called by the mobile app on startu
 
 ## 4. Push Notification Infrastructure
 
-### Provider: Firebase Cloud Messaging (FCM)
+### Provider: Expo Push API
 
-- **Why FCM:** Free, works with Expo (`expo-notifications`), supports Android natively, no additional server needed.
-- **Server dependency:** `firebase-admin` npm package. Initialized with a service account JSON (`FIREBASE_SERVICE_ACCOUNT` env var or `firebase-service-account.json` file).
+- **Why Expo Push:** Free, zero config, works with `expo-notifications` natively, supports Android and iOS via a single API. No Firebase project or service account needed.
+- **Server implementation:** Simple HTTP POST to `https://exp.host/--/api/v2/push/send`. No additional npm dependencies required (uses native `fetch`).
 
 ### Flow
 
@@ -159,7 +159,7 @@ Reed switch changes → Arduino sends GATE_STATE → Server receives
     │
     ├─ Broadcast GATE_STATE to app clients via WebSocket (existing)
     │
-    └─ Check NotificationPreferences for all users with fcmToken set
+    └─ Check NotificationPreferences for all users with push token set
          │
          ├─ notifyOnOpen && event == OPENED  → send push
          ├─ notifyOnClose && event == CLOSED → send push
@@ -254,7 +254,7 @@ Changes save automatically on toggle/selection (no save button needed).
 ### Push notification registration
 
 - Use `expo-notifications` to request permission on first launch after sign-in.
-- Get Expo push token → send to server via `POST /user/fcm-token`.
+- Get Expo push token → send to server via `POST /user/push-token`.
 - Listen for token refreshes → re-send to server.
 
 ---
@@ -283,17 +283,15 @@ The window accounts for:
 
 ### Notification sending
 
-- `firebase-admin` SDK sends to individual FCM tokens.
-- If a token is invalid/expired (FCM returns `messaging/registration-token-not-registered`), clear it from the database.
+- Expo Push API sends to individual push tokens.
+- If a token is invalid/expired (Expo returns `DeviceNotRegistered`), clear it from the database.
 - Don't send a push notification to the user who triggered the toggle (they already know). Check `triggeredByUserId !== user.id` before sending.
 
 ---
 
 ## 7. Environment Variables (new)
 
-| Variable | Description |
-|----------|-------------|
-| `FIREBASE_SERVICE_ACCOUNT` | Path to Firebase service account JSON file, or the JSON string itself |
+_No new environment variables required._ Push notifications use the Expo Push API which requires no server-side configuration.
 
 ---
 
@@ -314,7 +312,7 @@ The window accounts for:
 | 11 | No self-notification | User A toggles, User A has notifyOnOpen=true | User A does NOT get push (they triggered it) |
 | 12 | Multiple users get notified | User A toggles, User B+C have notifyOnOpen=true | B and C get push, A doesn't |
 | 13 | Remote open → everyone notified | Open via CAME remote, users have notifyOnOpen=true | All subscribed users get push |
-| 14 | Invalid FCM token cleaned up | Send notification with expired token | Token removed from DB, no crash |
+| 14 | Invalid push token cleaned up | Send notification with expired token | Token removed from DB, no crash |
 | 15 | Preferences default to off | New user checks notification prefs | All toggles off, openTooLongMin null |
 | 16 | Server restart recovers open-too-long timers | Gate already open, restart server | Timer restarts for remaining duration |
 
@@ -331,13 +329,12 @@ The window accounts for:
 
 ### Phase B — Notification Preferences
 6. Create `GET /user/notification-preferences` and `PUT /user/notification-preferences` endpoints.
-7. Create `POST /user/fcm-token` endpoint.
+7. Create `POST /user/push-token` endpoint.
 8. Build Notification Preferences screen in mobile app.
 
 ### Phase C — Push Notifications
-9. Set up Firebase project, download service account key.
-10. Install `firebase-admin` on server, initialize FCM.
-11. Install `expo-notifications` in mobile app, request permissions, register FCM token.
-12. Server: send push notifications on gate events based on user preferences.
-13. Server: implement open-too-long timer logic.
-14. Server: recover timers on restart.
+9. Install `expo-notifications` in mobile app, request permissions, register Expo push token.
+10. Implement server-side push sending via Expo Push API (`https://exp.host/--/api/v2/push/send`).
+11. Server: send push notifications on gate events based on user preferences.
+12. Server: implement open-too-long timer logic.
+13. Server: recover timers on restart.

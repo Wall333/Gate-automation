@@ -278,12 +278,12 @@ export async function updateNotificationPreferences(prefs) {
   return data;
 }
 
-export async function registerFcmToken(fcmToken) {
-  const res = await authFetch('/user/fcm-token', {
+export async function registerPushToken(pushToken) {
+  const res = await authFetch('/user/push-token', {
     method: 'POST',
-    body: JSON.stringify({ fcmToken }),
+    body: JSON.stringify({ pushToken }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to register FCM token');
+  if (!res.ok) throw new Error(data.error || 'Failed to register push token');
   return data;
 }

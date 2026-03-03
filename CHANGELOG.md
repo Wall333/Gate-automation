@@ -10,13 +10,13 @@ All notable changes to the Gate Controller project are documented here.
 - **Activity feed** — New "Activity" tab visible to all approved users. Shows a timeline of every gate open/close event, including events triggered by the CAME remote or wall button (not just the app). Events triggered via the app show which user did it; manual/remote events are labelled "via remote / button".
 - **Gate event logging** — New `GateEvent` model records every state transition from the reed switch. Events are attributed to the app user who toggled within the last 30 seconds, or logged as manual/remote if no recent toggle is found.
 - **Notification preferences** — Each user can choose to be notified when the gate opens, closes, or has been open for too long. Accessible via the 🔔 icon on the Activity screen.
-- **Push notifications (FCM)** — Firebase Cloud Messaging integration. Users receive push alerts based on their preferences. The user who triggered the toggle does not receive a self-notification.
+- **Push notifications (Expo Push)** — Push notifications via Expo Push API (no Firebase project needed). Users receive push alerts based on their preferences. The user who triggered the toggle does not receive a self-notification.
 - **Open-too-long alerts** — Users can set a threshold (1–30 min). If the gate stays open past that time, a "Gate Still Open" push notification is sent. Timers survive server restarts.
 - **Real-time activity feed** — New `GATE_EVENT` WebSocket message broadcasts events to all connected app clients. The Activity screen updates instantly without manual refresh.
-- **Notification preference API** — `GET /user/notification-preferences`, `PUT /user/notification-preferences`, `POST /user/fcm-token`.
+- **Notification preference API** — `GET /user/notification-preferences`, `PUT /user/notification-preferences`, `POST /user/push-token`.
 - **Gate events API** — `GET /gate/events` with cursor-based pagination (`limit`, `deviceId`, `before` params).
 - **`expo-notifications`** — Push notification permissions, token registration, foreground alert handling, Android notification channel.
-- **`firebase-admin`** — Server-side push notification sending with automatic invalid token cleanup.
+- **Expo Push API** — Server sends push notifications via Expo's push service (`https://exp.host/--/api/v2/push/send`). No Firebase project or service account needed. Invalid tokens auto-cleaned.
 - **About screen** — New "About" tab showing app version, build number, signed-in user, and project links. Version is read from `app.json` at build time via `expo-constants`.
 
 ### Changed

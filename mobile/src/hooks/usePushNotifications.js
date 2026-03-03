@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { registerFcmToken } from '../api';
+import { registerPushToken } from '../api';
 
 // Configure notification channel for Android
 Notifications.setNotificationChannelAsync('gate-events', {
@@ -54,7 +54,7 @@ export default function usePushNotifications() {
 
         if (token && token !== tokenRef.current) {
           tokenRef.current = token;
-          await registerFcmToken(token);
+          await registerPushToken(token);
           console.log('[push] Token registered:', token.slice(0, 20) + '...');
         }
       } catch (err) {
@@ -68,7 +68,7 @@ export default function usePushNotifications() {
         const token = newToken.data;
         if (token && token !== tokenRef.current) {
           tokenRef.current = token;
-          await registerFcmToken(token);
+          await registerPushToken(token);
           console.log('[push] Token refreshed and re-registered');
         }
       } catch (err) {

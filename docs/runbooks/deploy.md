@@ -86,11 +86,21 @@ DATABASE_URL=file:./prod.db
 
 > **Note:** `DEVICE_TOKEN` is no longer needed as a server environment variable. Device tokens are now auto-generated per device via the mobile app's "Add Device" flow (which calls `POST /admin/devices`).
 
+> **Note:** Push notifications use the **Expo Push API** — no Firebase project or service account is required. No additional environment variables are needed for push notifications to work.
+
 ### Step 6: Run Database Migration
 
 ```bash
 npx prisma migrate deploy
 ```
+
+### Step 6.1: Create Firmware Directory
+
+```bash
+mkdir -p firmware
+```
+
+This is where uploaded `.ota` firmware files are stored for OTA updates.
 
 ### Step 7: Install PM2 and Start Server
 
@@ -171,6 +181,18 @@ To also allow port 3000 (for testing before reverse proxy):
 
 - Check `/health` endpoint periodically (uptime monitor)
 - Review audit logs via `GET /admin/audit`
+- Review gate events via `GET /gate/events`
 - Monitor device connectivity via `GET /gate/status`
 - List registered devices via `GET /admin/devices`
 - Check PM2 status: `pm2 status` / `pm2 logs gate-server`
+
+## Updating to a New Version
+
+```bash
+cd ~/Gate-automation
+git pull origin main
+cd server
+npm install --omit=dev
+npx prisma migrate deploy
+pm2 restart gate-server
+```

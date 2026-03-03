@@ -60,7 +60,7 @@ model NotificationPreference {
   notifyOnOpen   Boolean  @default(false)
   notifyOnClose  Boolean  @default(false)
   openTooLongMin Int?     // null = disabled
-  fcmToken       String?  // Expo/FCM push token
+  fcmToken       String?  // Expo push token (column name kept for compat)
   updatedAt      DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])

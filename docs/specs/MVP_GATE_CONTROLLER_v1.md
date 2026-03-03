@@ -20,7 +20,7 @@ Build a minimum viable gate controller that allows approved users to remotely to
 **Out of scope (future):**
 - Multiple gates
 - Guest links / timed access
-- Push notifications, geofencing, BLE
+- Geofencing, BLE
 - Auto-close timer
 
 ---
@@ -52,7 +52,7 @@ Build a minimum viable gate controller that allows approved users to remotely to
 | Component | Role |
 |-----------|------|
 | **Mobile App** | Google sign-in, display gate status (online/offline), TOGGLE button, admin panel (approve/deny users), firmware upload & OTA trigger, activity feed, notification preferences, About screen (version info) |
-| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging, firmware storage & OTA delivery, gate event recording, push notifications (FCM) |
+| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging, firmware storage & OTA delivery, gate event recording, push notifications (Expo Push) |
 | **Arduino UNO R4 WiFi** | Maintain outbound WebSocket to server, listen for TOGGLE command, pulse relay, send heartbeat, receive OTA updates via `OTAUpdate` library |
 
 ---
@@ -209,7 +209,7 @@ Per-user notification settings.
 | notifyOnOpen   | Boolean  | Notify when gate opens (default: false) |
 | notifyOnClose  | Boolean  | Notify when gate closes (default: false) |
 | openTooLongMin | Int?     | Notify if gate open longer than N minutes. `null` = disabled |
-| fcmToken       | String?  | Expo/FCM push token |
+| fcmToken       | String?  | Expo push token (column name kept for compat) |
 | updatedAt      | DateTime | |
 
 **Storage (MVP):** SQLite via Prisma ORM (can migrate to PostgreSQL later).
@@ -500,13 +500,13 @@ Update notification preferences. Requires valid JWT.
 { "notifyOnOpen": true, "notifyOnClose": false, "openTooLongMin": 5, "updatedAt": "..." }
 ```
 
-### 7.20 `POST /user/fcm-token`
+### 7.20 `POST /user/push-token`
 
 Register or update the user's push notification token. Requires valid JWT.
 
 **Request:**
 ```json
-{ "fcmToken": "<expo-push-token>" }
+{ "pushToken": "<expo-push-token>" }
 ```
 
 **Response:**
@@ -539,7 +539,6 @@ Register or update the user's push notification token. Requires valid JWT.
 | `GOOGLE_CLIENT_ID` | Server | Google OAuth client ID |
 | `ADMIN_EMAIL` | Server | Email of the first admin (seeded on startup) |
 | `DATABASE_URL` | Server | Prisma connection string (e.g. `file:./dev.db`) |
-| `FIREBASE_SERVICE_ACCOUNT` | Server | Path to Firebase service-account JSON file (optional — push notifications disabled if not set) |
 | _(Device token)_ | Arduino (EEPROM) | Auto-generated per device via `POST /admin/devices`, provisioned to Arduino by the mobile app |
 | _(WiFi SSID)_ | Arduino (EEPROM) | Auto-detected from phone's current WiFi, provisioned via mobile app |
 | _(WiFi password)_ | Arduino (EEPROM) | Entered by user during provisioning, stored in EEPROM |
@@ -606,8 +605,8 @@ Sign In (Google)
 ### Phase 6 — Activity Feed & Notifications
 26. Add `GateEvent` and `NotificationPreference` models to Prisma; run migration.
 27. Update `deviceManager.js` GATE_STATE handler to create GateEvent with user attribution.
-28. Create `GET /gate/events`, `GET /user/notification-preferences`, `PUT /user/notification-preferences`, `POST /user/fcm-token` endpoints.
-29. Integrate `firebase-admin` for push notifications; implement open-too-long timers with server-restart recovery.
+28. Create `GET /gate/events`, `GET /user/notification-preferences`, `PUT /user/notification-preferences`, `POST /user/push-token` endpoints.
+29. Integrate Expo Push API for push notifications; implement open-too-long timers with server-restart recovery.
 30. Mobile: build Activity tab with feed screen, Notification Preferences screen, push registration (`expo-notifications`).
 31. Mobile: build About tab showing app version, build number, user info. `build.gradle` reads version from `app.json` dynamically.
 

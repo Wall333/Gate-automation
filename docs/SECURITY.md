@@ -58,7 +58,7 @@ gate.yourdomain.com {
 **Risk**: MEDIUM — The cloud VM has a public IP. If port 3000 is open, anyone can attempt to access the API.
 
 **Mitigation**:
-- Use a reverse proxy (Nginx/Caddy) on port 443 and **close port 3000** in the cloud firewall (Oracle Security Lists). Only ports 80 and 443 should be open.
+- Use a reverse proxy (Nginx/Caddy) on port 443 and **close port 3000** in the cloud firewall (GCP Firewall Rules). Only ports 80 and 443 should be open.
 - The server already has rate limiting on auth endpoints, which slows down brute-force attempts.
 - Consider adding `helmet` middleware for HTTP security headers:
   ```bash
@@ -136,7 +136,7 @@ gate.yourdomain.com {
   const globalLimiter = rateLimit({ windowMs: 60 * 1000, max: 100 });
   app.use(globalLimiter);
   ```
-- Oracle Cloud's free tier includes basic DDoS protection.
+- Google Cloud includes basic DDoS protection for Compute Engine instances.
 - Consider Cloudflare (free tier) in front of the server for additional protection.
 
 ### 9. Data Privacy (GDPR / User Data)
