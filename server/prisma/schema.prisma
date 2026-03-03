@@ -49,3 +49,13 @@ model AuditLog {
   user   User   @relation(fields: [userId],   references: [id])
   device Device @relation(fields: [deviceId], references: [id])
 }
+
+// ── Firmware ─────────────────────────────────────────────
+model Firmware {
+  id          String   @id @default(uuid())
+  filename    String               // Original uploaded filename
+  storedName  String   @unique     // Name on disk (uuid-based)
+  version     String   @default("") // Optional user-supplied version label
+  size        Int                  // File size in bytes
+  uploadedAt  DateTime @default(now())
+}

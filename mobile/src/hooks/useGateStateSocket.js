@@ -2,15 +2,18 @@ import { useEffect, useRef, useCallback } from 'react';
 import Config from '../config';
 
 /**
- * useGateStateSocket — connects to /app/ws and calls onGateState
- * whenever the server broadcasts a GATE_STATE event.
+ * useGateStateSocket — connects to /app/ws and calls callbacks
+ * whenever the server broadcasts GATE_STATE or OTA_STATUS events.
  *
- * @param {function} onGateState - callback({ deviceId, isOpen })
+ * @param {function} onGateState  - callback({ deviceId, isOpen })
+ * @param {function} [onOTAStatus] - callback({ deviceId, status, message })
  */
-export default function useGateStateSocket(onGateState) {
+export default function useGateStateSocket(onGateState, onOTAStatus) {
   const wsRef = useRef(null);
-  const cbRef = useRef(onGateState);
-  cbRef.current = onGateState;
+  const gateRef = useRef(onGateState);
+  const otaRef = useRef(onOTAStatus);
+  gateRef.current = onGateState;
+  otaRef.current = onOTAStatus;
 
   const connect = useCallback(() => {
     const wsUrl = Config.SERVER_URL.replace(/^http/, 'ws') + '/app/ws';
@@ -23,8 +26,15 @@ export default function useGateStateSocket(onGateState) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === 'GATE_STATE' && cbRef.current) {
-          cbRef.current({ deviceId: msg.deviceId, isOpen: msg.isOpen });
+        if (msg.type === 'GATE_STATE' && gateRef.current) {
+          gateRef.current({ deviceId: msg.deviceId, isOpen: msg.isOpen });
+        }
+        if (msg.type === 'OTA_STATUS' && otaRef.current) {
+          otaRef.current({
+            deviceId: msg.deviceId,
+            status: msg.status,
+            message: msg.message,
+          });
         }
       } catch (err) {
         console.warn('[app/ws] Parse error:', err);

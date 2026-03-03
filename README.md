@@ -13,7 +13,9 @@ Mobile App  ──►  Server  ──►  Arduino UNO R4 WiFi  ──►  Gate R
 2. The server verifies the Google token and checks whether the user has been approved by an administrator.
 3. Approved users can tap a **Toggle** button, which sends a command through the server to the Arduino.
 4. The Arduino pulses a relay to actuate the gate.
-5. The Arduino shows a **heart** on its built-in LED matrix when connected to the server, and a **sad face** when disconnected.
+5. A **reed switch** on the gate detects whether it's open or closed — the state is pushed to all connected app clients in real time.
+6. Admins can upload new firmware through the app and **push it to the Arduino over-the-air** (no USB needed).
+7. The Arduino shows a **heart** on its built-in LED matrix when connected to the server, and a **sad face** when disconnected.
 
 ## Components
 
@@ -22,6 +24,7 @@ Mobile App  ──►  Server  ──►  Arduino UNO R4 WiFi  ──►  Gate R
 | `server/` | Node.js (Express) API and WebSocket server |
 | `mobile/` | React Native application |
 | `arduino/` | Arduino UNO R4 WiFi sketch |
+| `tools/` | Utilities — `bin2ota.py` converts `.bin` firmware to `.ota` format for OTA updates |
 | `docs/` | Specifications, architecture decision records, runbooks |
 | `scripts/` | Utility and deployment scripts |
 
@@ -60,7 +63,8 @@ cd android && .\gradlew.bat assembleRelease   # builds APK locally
 # Open arduino/gate_controller/gate_controller.ino in Arduino IDE
 # Install libraries: WiFiS3, ArduinoHttpClient, ArduinoJson (v7+)
 # Also uses the built-in Arduino_LED_Matrix library for the heart LED indicator
-# Upload to board
+# OTAUpdate library is included with the board package (v1.5.3+)
+# Upload to board (subsequent updates can be pushed OTA from the app)
 # On first boot the Arduino starts as a WiFi AP ("GateController")
 # Connect with the mobile app → Settings → Add Device to provision
 # The app auto-detects your WiFi, auto-fills server details,

@@ -3,3 +3,7 @@ node_modules
 .env
 
 /generated/prisma
+
+# Firmware uploads (binary files, not for VCS)
+firmware/*.bin
+firmware/*.ota

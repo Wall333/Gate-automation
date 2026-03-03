@@ -193,3 +193,56 @@ export async function updateDevice(deviceId, updates) {
   if (!res.ok) throw new Error(data.error || 'Failed to update device');
   return data;
 }
+
+// ── Firmware API ─────────────────────────────────────────────────────
+
+export async function uploadFirmware(fileUri, fileName, version = '') {
+  const token = await getToken();
+  const formData = new FormData();
+  formData.append('firmware', {
+    uri: fileUri,
+    name: fileName,
+    type: 'application/octet-stream',
+  });
+  if (version) {
+    formData.append('version', version);
+  }
+
+  const res = await fetch(`${Config.SERVER_URL}/admin/firmware`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Content-Type is set automatically by FormData
+    },
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to upload firmware');
+  return data;
+}
+
+export async function getFirmwareList() {
+  const res = await authFetch('/admin/firmware');
+  if (!res.ok) throw new Error('Failed to fetch firmware list');
+  return await res.json();
+}
+
+export async function deleteFirmware(firmwareId) {
+  const res = await authFetch(`/admin/firmware/${firmwareId}`, {
+    method: 'DELETE',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to delete firmware');
+  return data;
+}
+
+export async function triggerOTA(deviceId, firmwareId) {
+  const res = await authFetch(`/admin/devices/${deviceId}/ota`, {
+    method: 'POST',
+    body: JSON.stringify({ firmwareId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to trigger OTA update');
+  return data;
+}

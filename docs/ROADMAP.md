@@ -1,13 +1,13 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.3.0  
-> **Last updated:** March 2, 2026
+> **Current version:** v1.4.0  
+> **Last updated:** March 3, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.
 
 ---
 
-## What We Have Today (v1.0 – v1.3.0)
+## What We Have Today (v1.0 – v1.4.0)
 
 The Gate Controller is a smart gate system with three components: an **Android app**, a **cloud server**, and an **Arduino board** wired to the gate's relay. Here's what's already built:
 
@@ -17,6 +17,7 @@ The Gate Controller is a smart gate system with three components: an **Android a
 - See which devices are online and when they were last active
 - **Gate state detection** — a magnetic reed switch on the gate reports whether it's open or closed, shown in the app in real time
 - **Real-time app updates** — gate state changes pushed to all connected app clients via WebSocket (no polling)
+- **Over-the-air firmware updates** — upload new firmware through the app and push it to the Arduino over WiFi (no USB needed)
 - Rename devices, view connection details
 - Full audit log of every gate open/close (who, when, success/fail)
 - Manage users: approve, deny, or remove
@@ -24,7 +25,7 @@ The Gate Controller is a smart gate system with three components: an **Android a
 
 ---
 
-## v1.4 — Stay in the Loop
+## v1.5 — Stay in the Loop
 
 *Know what's happening at your gate without opening the app.*
 
@@ -36,7 +37,7 @@ See the last few gate events right on the main screen when you open the app — 
 
 ---
 
-## v1.5 — Let People In
+## v1.6 — Let People In
 
 *Share access without sharing your account.*
 
@@ -48,7 +49,7 @@ The app will follow your phone's system theme. If you use dark mode on your phon
 
 ---
 
-## v1.6 — Automatic Gate
+## v1.7 — Automatic Gate
 
 *Let the gate take care of itself.*
 
@@ -96,6 +97,8 @@ The gate automatically opens when your phone gets close to home. Uses your phone
 ### Over-the-Air Arduino Updates
 Update the Arduino's code over WiFi instead of plugging in a USB cable. Useful once the Arduino is installed in a hard-to-reach spot.
 
+> **Note:** OTA is now available as of v1.4.0. See the Firmware Update section in Device Settings.
+
 ---
 
 ## Release Timeline
@@ -106,11 +109,13 @@ Update the Arduino's code over WiFi instead of plugging in a USB cable. Useful o
 | v1.1 | Device provisioning, per-device tokens | Done |
 | v1.2 | UI polish, device settings, LED feedback | Done |
 | v1.2.1 | Admin remove user | Done |
-| v1.3 | Notifications & activity feed | Planned |
-| v1.4 | Guest access & dark mode | Planned |
-| v1.5 | Gate state sensing & auto-close | Planned |
+| v1.3 | Gate state sensing (reed switch) | Done |
+| v1.4 | Over-the-air firmware updates | Done |
+| v1.5 | Notifications & activity feed | Planned |
+| v1.6 | Guest access & dark mode | Planned |
+| v1.7 | Auto-close timer | Planned |
 | v2.0 | Roles, schedules, multi-gate | Planned |
-| Future | Camera, voice, widget, geofence, OTA | Ideas |
+| Future | Camera, voice, widget, geofence | Ideas |
 
 ---
 

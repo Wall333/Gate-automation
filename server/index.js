@@ -13,12 +13,14 @@ app.use(cors());
 app.use(express.json());
 
 // ── Routes ───────────────────────────────────────────────
-const authRoutes  = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const gateRoutes  = require('./routes/gate');
+const authRoutes     = require('./routes/auth');
+const adminRoutes    = require('./routes/admin');
+const gateRoutes     = require('./routes/gate');
+const firmwareRoutes = require('./routes/firmware');
 app.use('/auth',  authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/gate',  gateRoutes);
+app.use('/',      firmwareRoutes);  // Mounts /admin/firmware + /firmware/download
 
 // ── Health check ─────────────────────────────────────────
 app.get('/health', (_req, res) => {

@@ -13,6 +13,7 @@ Build a minimum viable gate controller that allows approved users to remotely to
 - Device online/offline status
 - Gate open/closed state detection via reed switch
 - Real-time gate state updates to app clients via WebSocket
+- Over-the-air firmware updates (admin uploads `.ota` file, pushes to device)
 
 **Out of scope (future):**
 - Multiple gates
@@ -48,9 +49,9 @@ Build a minimum viable gate controller that allows approved users to remotely to
 
 | Component | Role |
 |-----------|------|
-| **Mobile App** | Google sign-in, display gate status (online/offline), TOGGLE button, admin panel (approve/deny users) |
-| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging |
-| **Arduino UNO R4 WiFi** | Maintain outbound WebSocket to server, listen for TOGGLE command, pulse relay, send heartbeat |
+| **Mobile App** | Google sign-in, display gate status (online/offline), TOGGLE button, admin panel (approve/deny users), firmware upload & OTA trigger |
+| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging, firmware storage & OTA delivery |
+| **Arduino UNO R4 WiFi** | Maintain outbound WebSocket to server, listen for TOGGLE command, pulse relay, send heartbeat, receive OTA updates via `OTAUpdate` library |
 
 ---
 
@@ -109,10 +110,17 @@ Arduino                           Server                          App
   │                                 │                               │
   │── { type: "GATE_STATE",  ─────►│  (reed switch change)         │
   │    isOpen: true/false }         │── broadcast GATE_STATE ──────►│
+  │                                 │                               │
+  │◄── { type: "OTA_UPDATE",  ────│  (admin triggers firmware push)│
+  │    url: "http://..." }          │                               │
+  │── { type: "OTA_STATUS",  ─────►│  (progress: downloading,      │
+  │    status, message }            │   verifying, applying, error) │
+  │                                 │── broadcast OTA_STATUS ──────►│
+  │  (device reboots on success)    │                               │
 ```
 
 **App-facing WebSocket (`/app/ws`):**
-Mobile/web clients connect to `/app/ws` for real-time updates. The server broadcasts `GATE_STATE` messages whenever a device reports a state change. No authentication is required on this endpoint (stateless broadcast).
+Mobile/web clients connect to `/app/ws` for real-time updates. The server broadcasts `GATE_STATE` and `OTA_STATUS` messages. No authentication is required on this endpoint (stateless broadcast).
 
 - Server tracks `lastSeen` on each heartbeat.
 - If no heartbeat received for 90 seconds → device marked offline.
@@ -163,6 +171,17 @@ If WebSocket proves unreliable on the Arduino hardware, fall back to:
 | action    | String   | `"TOGGLE"` |
 | result    | String   | `"ACK"` \| `"TIMEOUT"` \| `"DEVICE_OFFLINE"` |
 | timestamp | DateTime | |
+
+### Firmware
+
+| Column     | Type     | Notes |
+|------------|----------|-------|
+| id         | UUID PK  | Auto-generated |
+| filename   | String   | Original upload filename |
+| storedName | String   | Unique on-disk filename (UUID-based) |
+| version    | String   | User-supplied version label (optional) |
+| size       | Int      | File size in bytes |
+| uploadedAt | DateTime | |
 
 **Storage (MVP):** SQLite via Prisma ORM (can migrate to PostgreSQL later).
 
@@ -353,6 +372,62 @@ Update a device's editable properties. Currently supports renaming. Requires `ro
 
 WebSocket endpoint for Arduino device connection. Device authenticates by sending `{ type: "AUTH", token: "<device-token>" }` as the first message.
 
+### 7.12 `POST /admin/firmware`
+
+Upload a firmware file (`.bin` or `.ota`, max 2 MB). Requires `role: "admin"`. Uses `multipart/form-data`.
+
+**Request:** `Content-Type: multipart/form-data` with field `firmware` (file) and optional field `version` (string).
+
+**Response (201):**
+```json
+{ "id": "...", "filename": "gate_controller.ota", "storedName": "<uuid>.ota", "version": "1.4.0", "size": 48320, "uploadedAt": "..." }
+```
+
+### 7.13 `GET /admin/firmware`
+
+List all uploaded firmware files. Requires `role: "admin"`.
+
+**Response:**
+```json
+[
+  { "id": "...", "filename": "gate_controller.ota", "storedName": "<uuid>.ota", "version": "1.4.0", "size": 48320, "uploadedAt": "..." }
+]
+```
+
+### 7.14 `DELETE /admin/firmware/:id`
+
+Delete a firmware file from disk and database. Requires `role: "admin"`.
+
+**Response (200):**
+```json
+{ "message": "Firmware deleted.", "id": "<uuid>" }
+```
+
+### 7.15 `GET /firmware/download/:storedName`
+
+Serve a firmware file for download. **No authentication** — the Arduino fetches this URL during OTA. The `storedName` acts as an unguessable token (UUID).
+
+**Response:** Binary file stream with `Content-Disposition: attachment`.
+
+### 7.16 `POST /admin/devices/:id/ota`
+
+Trigger an OTA update on a connected device. Requires `role: "admin"`. Sends an `OTA_UPDATE` WebSocket message to the device with the firmware download URL.
+
+**Request:**
+```json
+{ "firmwareId": "<firmware-uuid>" }
+```
+
+**Response (200):**
+```json
+{ "ok": true, "message": "OTA update triggered." }
+```
+
+**Response (device offline):**
+```json
+{ "ok": false, "error": "Device is not connected." }
+```
+
 ---
 
 ## 8. Security Notes
@@ -433,10 +508,18 @@ Sign In (Google)
                             └── [Users] tab (admin only) → Users + Audit log
 ```
 
-### Phase 5 — Integration & Hardening
-20. End-to-end test: sign in → approve → toggle → verify audit log.
-21. Add rate limiting, input validation, error handling polish.
-22. Write deployment runbook and finalize README.
+### Phase 5 — Over-the-Air Updates
+20. Add Firmware model to Prisma schema; run migration.
+21. Create firmware routes: upload (`multer`), list, delete, download (no auth), trigger OTA.
+22. Add `sendOTAUpdate` to `deviceManager.js`; handle `OTA_STATUS` messages from device → broadcast to app clients.
+23. Arduino: add `OTAUpdate` library handler — receive `OTA_UPDATE`, download `.ota` file, verify, apply, reboot.
+24. Mobile: firmware upload via `expo-document-picker`, firmware list with push buttons, OTA status banner via WebSocket.
+25. Create `tools/bin2ota.py` conversion script (LZSS compression + CRC32 + magic header).
+
+### Phase 6 — Integration & Hardening
+26. End-to-end test: sign in → approve → toggle → verify audit log.
+27. Add rate limiting, input validation, error handling polish.
+28. Write deployment runbook and finalize README.
 
 ---
 
@@ -466,7 +549,12 @@ Sign In (Google)
 | 20 | Admin can delete a user | `DELETE /admin/users/:id` with admin JWT | 200 + user and audit logs removed |
 | 21 | Deleting user cleans up audit logs | Delete user, check audit logs | Associated logs removed |
 | 22 | Admin cannot self-delete | `DELETE /admin/users/:id` with own ID | 400 error |
+| 23 | Admin can upload firmware | `POST /admin/firmware` with .bin/.ota file | 201 + firmware record |
+| 24 | Admin can list firmware | `GET /admin/firmware` | Array of firmware records |
+| 25 | Admin can trigger OTA | `POST /admin/devices/:id/ota` with `{ firmwareId }` | OTA_UPDATE sent to device |
+| 26 | Device downloads firmware | OTA_UPDATE received → downloads from URL | OTA_STATUS messages sent |
+| 27 | App shows OTA progress | OTA_STATUS broadcast received | UI shows status banner |
 
 ---
 
-*Spec version: v1.3.0 — March 2, 2026*
+*Spec version: v1.4.0 — March 3, 2026*

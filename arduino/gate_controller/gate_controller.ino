@@ -23,6 +23,7 @@
 #include <WiFiS3.h>
 #include <ArduinoHttpClient.h>
 #include <ArduinoJson.h>
+#include <OTAUpdate.h>
 #include "Arduino_LED_Matrix.h"
 #include "config.h"
 #include "provisioning.h"
@@ -88,6 +89,9 @@ unsigned long lastReconnect  = 0;
 bool          wsConnected    = false;
 bool          authenticated  = false;
 
+// ── OTA (Over-the-Air firmware update) ───────────────────────────────
+OTAUpdate     ota;
+
 // ── Reed switch (gate state) ─────────────────────────────────────────
 bool          lastGateOpen       = false;  // Last reported gate state
 bool          gateStateReady     = false;  // True after first stable read
@@ -104,6 +108,8 @@ void pulseRelay();
 void sendAck(bool ok);
 void sendGateState(bool isOpen);
 void checkReedSwitch();
+void performOTA(const char* url);
+void sendOTAStatus(const char* status, const char* message);
 
 // ─────────────────────────────────────────────────────────────────────
 // setup()
@@ -379,6 +385,22 @@ void handleMessage(const String& message) {
     return;
   }
 
+  // ── OTA_UPDATE — server wants us to update firmware ─
+  if (strcmp(type, "OTA_UPDATE") == 0) {
+    const char* url = doc["url"];
+    if (!url || strlen(url) == 0) {
+      Serial.println(F("[ota] OTA_UPDATE missing 'url'"));
+      sendOTAStatus("error", "Missing firmware URL");
+      return;
+    }
+    Serial.print(F("[ota] OTA_UPDATE received — URL: "));
+    Serial.println(url);
+    sendOTAStatus("downloading", "Starting firmware download...");
+    performOTA(url);
+    // If we get here, OTA failed (success = reboot)
+    return;
+  }
+
   // ── PONG — heartbeat response ───────────────────
   if (strcmp(type, "PONG") == 0) {
     // Nothing to do — server confirmed heartbeat
@@ -464,4 +486,85 @@ void sendGateState(bool isOpen) {
   Serial.print(F("[ws] GATE_STATE sent (isOpen="));
   Serial.print(isOpen ? "true" : "false");
   Serial.println(F(")"));
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Send OTA_STATUS message over WebSocket
+// ─────────────────────────────────────────────────────────────────────
+void sendOTAStatus(const char* status, const char* message) {
+  if (!wsConnected) return;
+
+  JsonDocument doc;
+  doc["type"]    = "OTA_STATUS";
+  doc["status"]  = status;
+  doc["message"] = message;
+
+  String payload;
+  serializeJson(doc, payload);
+
+  wsClient->beginMessage(TYPE_TEXT);
+  wsClient->print(payload);
+  wsClient->endMessage();
+
+  Serial.print(F("[ota] Status: "));
+  Serial.print(status);
+  Serial.print(F(" — "));
+  Serial.println(message);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Perform OTA firmware update
+// Downloads firmware from the given URL, verifies, and applies it.
+// On success the board reboots — this function only returns on failure.
+// EEPROM config (WiFi, server, token) survives the update.
+// ─────────────────────────────────────────────────────────────────────
+void performOTA(const char* url) {
+  Serial.println(F("[ota] Beginning OTA update..."));
+
+  // Step 1: Initialise OTA with local filename
+  int err = ota.begin("/update.bin");
+  if (err != 0) {
+    Serial.print(F("[ota] begin() failed: "));
+    Serial.println(err);
+    sendOTAStatus("error", "OTA begin failed");
+    return;
+  }
+
+  // Step 2: Download firmware from server
+  Serial.print(F("[ota] Downloading from: "));
+  Serial.println(url);
+  err = ota.download(url, "/update.bin");
+  if (err != 0) {
+    Serial.print(F("[ota] download() failed: "));
+    Serial.println(err);
+    sendOTAStatus("error", "Firmware download failed");
+    ota.reset();
+    return;
+  }
+  Serial.println(F("[ota] Download complete"));
+  sendOTAStatus("verifying", "Download complete, verifying...");
+
+  // Step 3: Verify the downloaded firmware
+  err = ota.verify();
+  if (err != 0) {
+    Serial.print(F("[ota] verify() failed: "));
+    Serial.println(err);
+    sendOTAStatus("error", "Firmware verification failed");
+    ota.reset();
+    return;
+  }
+  Serial.println(F("[ota] Verification passed"));
+
+  // Step 4: Apply the update (board reboots on success)
+  sendOTAStatus("applying", "Applying update — device will reboot...");
+  delay(500);  // Give the WebSocket message time to send
+
+  Serial.println(F("[ota] Applying update and rebooting..."));
+  err = ota.update("/update.bin");
+
+  // If we reach here, update() failed
+  Serial.print(F("[ota] update() failed: "));
+  Serial.println(err);
+  sendOTAStatus("error", "Firmware apply failed");
+  ota.reset();
 }

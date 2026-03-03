@@ -110,6 +110,18 @@ function initDeviceWebSocket(httpServer) {
         console.log(`[ws] Device ${authenticatedDeviceId} gate state: ${isOpen ? 'OPEN' : 'CLOSED'}`);
         return;
       }
+      // ── OTA_STATUS (firmware update progress) ──────────
+      if (msg.type === 'OTA_STATUS') {
+        // Forward OTA progress to all app clients
+        broadcastToAppClients({
+          type: 'OTA_STATUS',
+          deviceId: authenticatedDeviceId,
+          status: msg.status,
+          message: msg.message,
+        });
+        console.log(`[ota] Device ${authenticatedDeviceId}: ${msg.status} — ${msg.message}`);
+        return;
+      }
       // ── ACK (response to a TOGGLE we sent) ──────────
       if (msg.type === 'ACK') {
         // Resolve any pending toggle promise
@@ -211,6 +223,23 @@ function isDeviceConnected(deviceId) {
   return ws && ws.readyState === 1;
 }
 
+// ── Send OTA_UPDATE command to a device ─────────────────
+function sendOTAUpdate(deviceId, firmwareUrl) {
+  const ws = connectedDevices.get(deviceId);
+  if (!ws || ws.readyState !== 1) {
+    console.error(`[ota] Device ${deviceId} not connected`);
+    return false;
+  }
+
+  ws.send(JSON.stringify({
+    type: 'OTA_UPDATE',
+    url: firmwareUrl,
+  }));
+
+  console.log(`[ota] Sent OTA_UPDATE to device ${deviceId}: ${firmwareUrl}`);
+  return true;
+}
+
 // ── Broadcast to all connected app clients ──────────────
 function broadcastToAppClients(message) {
   const payload = JSON.stringify(message);
@@ -262,4 +291,4 @@ function initAppWebSocket(httpServer) {
   return appWss;
 }
 
-module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected };
+module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected, sendOTAUpdate };

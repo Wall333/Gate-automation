@@ -4,6 +4,23 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.4.0] — 2026-03-03
+
+### Added
+- **OTA firmware updates** — Arduino can now be updated over WiFi without USB. The admin uploads a compiled `.ota` firmware file through the app, and pushes it to the device. The device downloads, verifies, and reboots with the new firmware. EEPROM config (WiFi, server, token) is preserved across updates.
+- **`OTA_UPDATE` WebSocket command** — Server sends `{"type":"OTA_UPDATE","url":"..."}` to the device. Arduino uses the `OTAUpdate` library to download and flash via the ESP32-S3 co-processor.
+- **`OTA_STATUS` WebSocket messages** — Arduino reports progress (`downloading`, `verifying`, `applying`, `error`) back to the server, which broadcasts to all connected app clients for real-time feedback.
+- **Firmware management API** — `POST /admin/firmware` (upload), `GET /admin/firmware` (list), `DELETE /admin/firmware/:id` (remove), `GET /firmware/download/:name` (serve to Arduino), `POST /admin/devices/:id/ota` (trigger update).
+- **Firmware model** — New `Firmware` table tracks uploaded files (filename, version, size, upload date).
+- **Firmware Update UI** — Device Settings screen now has a "Firmware Update" section (admin only). Upload `.bin` / `.ota` files, view uploaded firmware, and push updates to online devices.
+- **`bin2ota.py` conversion tool** — Python script (`tools/bin2ota.py`) converts `.bin` files from Arduino IDE's "Export Compiled Binary" to the `.ota` format required by the R4 WiFi's OTA mechanism. Uses LZSS compression with Arduino-compatible parameters.
+
+### Changed
+- **`useGateStateSocket` hook** — Now accepts an optional `onOTAStatus` callback for real-time OTA progress reporting on the Device Settings screen.
+- **`deviceManager.js`** — Handles `OTA_STATUS` messages from devices and exports `sendOTAUpdate()`.
+
+---
+
 ## [v1.3.0] — 2026-03-02
 
 ### Added

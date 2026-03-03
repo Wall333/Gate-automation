@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,11 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { deleteDevice, updateDevice } from '../api';
+import { deleteDevice, updateDevice, uploadFirmware, getFirmwareList, triggerOTA } from '../api';
 import { useAuth } from '../AuthContext';
+import useGateStateSocket from '../hooks/useGateStateSocket';
 import Config from '../config';
 
 export default function DeviceSettingsScreen() {
@@ -78,6 +80,108 @@ export default function DeviceSettingsScreen() {
               navigation.popToTop();
             } catch (err) {
               Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  // ── Firmware update state ───────────────────────────
+  const [firmwareList, setFirmwareList] = useState([]);
+  const [loadingFirmware, setLoadingFirmware] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [triggeringOta, setTriggeringOta] = useState(false);
+  const [otaStatus, setOtaStatus] = useState(null); // { status, message }
+
+  // Listen for real-time OTA status updates from the device
+  useGateStateSocket(null, useCallback(({ deviceId, status, message }) => {
+    if (deviceId === device.id) {
+      setOtaStatus({ status, message });
+    }
+  }, [device.id]));
+
+  const loadFirmwareList = useCallback(async () => {
+    setLoadingFirmware(true);
+    try {
+      const list = await getFirmwareList();
+      setFirmwareList(list);
+    } catch (err) {
+      console.warn('Failed to load firmware list:', err.message);
+    } finally {
+      setLoadingFirmware(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) loadFirmwareList();
+  }, [isAdmin, loadFirmwareList]);
+
+  async function handleUploadFirmware() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/octet-stream',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) return;
+
+      const file = result.assets[0];
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (ext !== 'bin' && ext !== 'ota') {
+        Alert.alert('Invalid File', 'Please select a .bin or .ota firmware file.');
+        return;
+      }
+
+      // Optional: prompt for version label
+      Alert.prompt
+        ? Alert.prompt('Firmware Version', 'Enter an optional version label (e.g. v1.4.0):', [
+            { text: 'Skip', onPress: () => doUpload(file, '') },
+            { text: 'OK', onPress: (version) => doUpload(file, version || '') },
+          ])
+        : doUpload(file, '');
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
+  }
+
+  async function doUpload(file, version) {
+    setUploading(true);
+    try {
+      await uploadFirmware(file.uri, file.name, version);
+      Alert.alert('Success', `Firmware "${file.name}" uploaded.`);
+      await loadFirmwareList();
+    } catch (err) {
+      Alert.alert('Upload Failed', err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleTriggerOTA(firmware) {
+    if (!device.isOnline) {
+      Alert.alert('Device Offline', 'The device must be online to receive a firmware update.');
+      return;
+    }
+
+    Alert.alert(
+      'Push Firmware Update',
+      `Send "${firmware.filename}"${firmware.version ? ` (${firmware.version})` : ''} to ${name}?\n\nThe device will download the firmware, verify it, and reboot.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Update',
+          onPress: async () => {
+            setTriggeringOta(true);
+            setOtaStatus({ status: 'triggering', message: 'Sending update command...' });
+            try {
+              await triggerOTA(device.id, firmware.id);
+              setOtaStatus({ status: 'downloading', message: 'Device is downloading firmware...' });
+            } catch (err) {
+              setOtaStatus(null);
+              Alert.alert('OTA Failed', err.message);
+            } finally {
+              setTriggeringOta(false);
             }
           },
         },
@@ -178,6 +282,87 @@ export default function DeviceSettingsScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Firmware Update (admin only) */}
+      {isAdmin && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Firmware Update</Text>
+          <View style={styles.card}>
+            {/* OTA Status Banner */}
+            {otaStatus && (
+              <View style={[
+                styles.otaBanner,
+                otaStatus.status === 'error' && styles.otaBannerError,
+              ]}>
+                {otaStatus.status !== 'error' && (
+                  <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.otaBannerTitle}>
+                    {otaStatus.status === 'error' ? 'Update Failed' : 'Updating...'}
+                  </Text>
+                  <Text style={styles.otaBannerMsg}>{otaStatus.message}</Text>
+                </View>
+                {otaStatus.status === 'error' && (
+                  <TouchableOpacity onPress={() => setOtaStatus(null)}>
+                    <Text style={styles.otaDismiss}>Dismiss</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Upload Button */}
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={handleUploadFirmware}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.uploadButtonText}>Upload Firmware (.bin / .ota)</Text>
+              )}
+            </TouchableOpacity>
+
+            {/* Firmware List */}
+            {loadingFirmware ? (
+              <ActivityIndicator size="small" style={{ marginTop: 12 }} />
+            ) : firmwareList.length === 0 ? (
+              <Text style={styles.cardNote}>No firmware files uploaded yet.</Text>
+            ) : (
+              firmwareList.map((fw) => (
+                <View key={fw.id} style={styles.fwRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.fwName} numberOfLines={1}>
+                      {fw.filename}
+                    </Text>
+                    <Text style={styles.fwMeta}>
+                      {fw.version ? `${fw.version} · ` : ''}
+                      {(fw.size / 1024).toFixed(0)} KB ·{' '}
+                      {new Date(fw.uploadedAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.pushButton,
+                      (!device.isOnline || triggeringOta) && styles.pushButtonDisabled,
+                    ]}
+                    onPress={() => handleTriggerOTA(fw)}
+                    disabled={!device.isOnline || triggeringOta}
+                  >
+                    <Text style={styles.pushButtonText}>Push</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+
+            <Text style={styles.cardNote}>
+              Upload a compiled .bin or .ota file, then tap "Push" to send it
+              to the device over WiFi. The device will reboot after updating.
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Actions */}
       {isAdmin && (
@@ -339,5 +524,76 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  // ── Firmware Update styles ─────────────────────────
+  otaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  otaBannerError: {
+    backgroundColor: '#FF3B30',
+  },
+  otaBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  otaBannerMsg: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+  otaDismiss: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+  },
+  uploadButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  uploadButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  fwRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#f0f0f0',
+  },
+  fwName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1a1a1a',
+  },
+  fwMeta: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  pushButton: {
+    backgroundColor: '#34C759',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    marginLeft: 12,
+  },
+  pushButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  pushButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
