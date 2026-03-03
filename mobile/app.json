@@ -34,7 +34,6 @@
       "expo-secure-store",
       "expo-asset",
       "expo-web-browser",
-      "expo-constants",
       "@react-native-google-signin/google-signin",
       "./plugins/withNetworkSecurityConfig"
     ],
