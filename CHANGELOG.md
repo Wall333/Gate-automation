@@ -4,6 +4,18 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.2] — 2026-03-03
+
+### Fixed
+- **Prisma client out of date on server** — `prisma migrate deploy` creates DB tables but does not regenerate the Prisma JS client. New models (`GateEvent`, `NotificationPreference`, `Firmware`) were `undefined` at runtime, causing "Cannot read properties of undefined" errors on notification preferences, activity feed, and firmware routes.
+
+### Changed
+- **`prisma` moved to production dependencies** — Moved from `devDependencies` to `dependencies` so it’s available when deploying with `npm install --omit=dev`.
+- **`postinstall` script** — Added `prisma generate` as a `postinstall` hook in `server/package.json` so the Prisma client is always regenerated automatically on `npm install`.
+- **Deploy runbook** — Added note about `prisma generate` requirement after install.
+
+---
+
 ## [v1.5.1] — 2026-03-03
 
 ### Fixed

@@ -68,6 +68,8 @@ cd Gate-automation/server
 npm install --omit=dev
 ```
 
+> **Important:** `npm install` triggers `postinstall` which runs `prisma generate` automatically. This ensures the Prisma client includes all models. If you ever see errors like `Cannot read properties of undefined (reading 'findMany')` on Prisma models, run `npx prisma generate` manually and restart PM2.
+
 ### Step 5: Configure Environment
 
 ```bash
