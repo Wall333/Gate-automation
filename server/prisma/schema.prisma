@@ -21,7 +21,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  auditLogs AuditLog[]
+  auditLogs              AuditLog[]
+  gateEvents             GateEvent[]
+  notificationPreference NotificationPreference?
 }
 
 // ── Devices ──────────────────────────────────────────────
@@ -34,7 +36,34 @@ model Device {
   lastSeen  DateTime?
   createdAt DateTime @default(now())
 
-  auditLogs AuditLog[]
+  auditLogs  AuditLog[]
+  gateEvents GateEvent[]
+}
+
+// ── Gate Events (activity feed) ──────────────────────────
+model GateEvent {
+  id                String   @id @default(uuid())
+  deviceId          String
+  event             String   // "OPENED" | "CLOSED"
+  triggeredBy       String?  // User name if app-triggered, null if manual/remote
+  triggeredByUserId String?  // FK to User, null if manual/remote
+  timestamp         DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id])
+  user   User?  @relation(fields: [triggeredByUserId], references: [id])
+}
+
+// ── Notification Preferences ─────────────────────────────
+model NotificationPreference {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  notifyOnOpen   Boolean  @default(false)
+  notifyOnClose  Boolean  @default(false)
+  openTooLongMin Int?     // null = disabled
+  fcmToken       String?  // Expo/FCM push token
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 // ── Audit Log ────────────────────────────────────────────

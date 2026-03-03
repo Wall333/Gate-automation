@@ -1,6 +1,7 @@
 const { WebSocketServer } = require('ws');
 const bcrypt = require('bcryptjs');
 const prisma = require('./prisma');
+const { sendPush } = require('./notificationService');
 
 // ── State ────────────────────────────────────────────────
 // Map of deviceId → WebSocket connection (device connections)
@@ -11,6 +12,13 @@ const appClients = new Set();
 
 // How long before we consider a device offline (ms)
 const OFFLINE_THRESHOLD_MS = 90 * 1000;
+
+// Attribution window: if a TOGGLE audit log exists within this many ms
+// before a GATE_STATE, attribute the event to that user
+const ATTRIBUTION_WINDOW_MS = 30_000;
+
+// Open-too-long timers: Map<`${deviceId}:${userId}`, timeoutId>
+const openTooLongTimers = new Map();
 
 // ── WebSocket servers (noServer mode for multi-path routing) ────
 let deviceWss = null;
@@ -101,12 +109,17 @@ function initDeviceWebSocket(httpServer) {
           where: { id: authenticatedDeviceId },
           data: { isOpen },
         });
+
         // Broadcast to all connected app clients
         broadcastToAppClients({
           type: 'GATE_STATE',
           deviceId: authenticatedDeviceId,
           isOpen,
         });
+
+        // Log gate event with user attribution
+        await logGateEvent(authenticatedDeviceId, isOpen);
+
         console.log(`[ws] Device ${authenticatedDeviceId} gate state: ${isOpen ? 'OPEN' : 'CLOSED'}`);
         return;
       }
@@ -250,6 +263,238 @@ function broadcastToAppClients(message) {
   }
 }
 
+// ── Log gate event + send notifications ─────────────────
+async function logGateEvent(deviceId, isOpen) {
+  const eventType = isOpen ? 'OPENED' : 'CLOSED';
+
+  // Attribution: check for a recent TOGGLE from the app
+  let triggeredBy = null;
+  let triggeredByUserId = null;
+
+  try {
+    const cutoff = new Date(Date.now() - ATTRIBUTION_WINDOW_MS);
+    const recentToggle = await prisma.auditLog.findFirst({
+      where: {
+        deviceId,
+        action: 'TOGGLE',
+        result: 'ACK',
+        timestamp: { gte: cutoff },
+      },
+      orderBy: { timestamp: 'desc' },
+      include: { user: { select: { id: true, name: true } } },
+    });
+
+    if (recentToggle) {
+      triggeredBy = recentToggle.user.name;
+      triggeredByUserId = recentToggle.user.id;
+    }
+  } catch (err) {
+    console.error('[events] Attribution lookup error:', err.message);
+  }
+
+  // Create the event record
+  let gateEvent;
+  try {
+    gateEvent = await prisma.gateEvent.create({
+      data: {
+        deviceId,
+        event: eventType,
+        triggeredBy,
+        triggeredByUserId,
+      },
+    });
+  } catch (err) {
+    console.error('[events] Failed to create GateEvent:', err.message);
+    return;
+  }
+
+  // Broadcast the event to app clients for real-time activity feed
+  const device = await prisma.device.findUnique({ where: { id: deviceId }, select: { name: true } });
+  broadcastToAppClients({
+    type: 'GATE_EVENT',
+    id: gateEvent.id,
+    deviceId,
+    deviceName: device?.name || 'Unknown',
+    event: eventType,
+    triggeredBy,
+    timestamp: gateEvent.timestamp.toISOString(),
+  });
+
+  // Handle open-too-long timers
+  if (isOpen) {
+    startOpenTooLongTimers(deviceId, device?.name || 'Gate');
+  } else {
+    cancelOpenTooLongTimers(deviceId);
+  }
+
+  // Send push notifications
+  await sendGateNotifications(deviceId, device?.name || 'Gate', eventType, triggeredBy, triggeredByUserId);
+}
+
+// ── Push notifications for gate events ──────────────────
+async function sendGateNotifications(deviceId, deviceName, eventType, triggeredBy, triggeredByUserId) {
+  try {
+    const field = eventType === 'OPENED' ? 'notifyOnOpen' : 'notifyOnClose';
+
+    const prefs = await prisma.notificationPreference.findMany({
+      where: {
+        [field]: true,
+        fcmToken: { not: null },
+        // Don't notify the user who triggered it (they already know)
+        ...(triggeredByUserId ? { userId: { not: triggeredByUserId } } : {}),
+      },
+    });
+
+    if (prefs.length === 0) return;
+
+    const title = eventType === 'OPENED' ? 'Gate Opened' : 'Gate Closed';
+    const body = triggeredBy
+      ? `${deviceName} was ${eventType.toLowerCase()} by ${triggeredBy}`
+      : `${deviceName} was ${eventType.toLowerCase()}`;
+
+    const data = { type: `GATE_${eventType}`, deviceId };
+
+    for (const pref of prefs) {
+      const sent = await sendPush(pref.fcmToken, title, body, data);
+      if (!sent && pref.fcmToken) {
+        // Token might be invalid — clear it
+        try {
+          await prisma.notificationPreference.update({
+            where: { id: pref.id },
+            data: { fcmToken: null },
+          });
+        } catch { /* ignore */ }
+      }
+    }
+  } catch (err) {
+    console.error('[notify] Error sending gate notifications:', err.message);
+  }
+}
+
+// ── Open-too-long timers ────────────────────────────────
+async function startOpenTooLongTimers(deviceId, deviceName) {
+  try {
+    const prefs = await prisma.notificationPreference.findMany({
+      where: {
+        openTooLongMin: { not: null },
+        fcmToken: { not: null },
+      },
+    });
+
+    for (const pref of prefs) {
+      const key = `${deviceId}:${pref.userId}`;
+      // Clear any existing timer for this device+user
+      if (openTooLongTimers.has(key)) {
+        clearTimeout(openTooLongTimers.get(key));
+      }
+
+      const delayMs = pref.openTooLongMin * 60 * 1000;
+      const timer = setTimeout(async () => {
+        openTooLongTimers.delete(key);
+        // Check if gate is still open
+        try {
+          const device = await prisma.device.findUnique({ where: { id: deviceId } });
+          if (device && device.isOpen) {
+            await sendPush(
+              pref.fcmToken,
+              'Gate Still Open',
+              `${deviceName} has been open for ${pref.openTooLongMin} minute${pref.openTooLongMin === 1 ? '' : 's'}`,
+              { type: 'GATE_OPEN_TOO_LONG', deviceId }
+            );
+            console.log(`[notify] Open-too-long alert sent for device ${deviceId} to user ${pref.userId}`);
+          }
+        } catch (err) {
+          console.error('[notify] Open-too-long timer error:', err.message);
+        }
+      }, delayMs);
+
+      openTooLongTimers.set(key, timer);
+    }
+  } catch (err) {
+    console.error('[notify] Error starting open-too-long timers:', err.message);
+  }
+}
+
+function cancelOpenTooLongTimers(deviceId) {
+  for (const [key, timer] of openTooLongTimers.entries()) {
+    if (key.startsWith(`${deviceId}:`)) {
+      clearTimeout(timer);
+      openTooLongTimers.delete(key);
+    }
+  }
+}
+
+// ── Recover open-too-long timers after server restart ───
+async function recoverOpenTooLongTimers() {
+  try {
+    const openDevices = await prisma.device.findMany({
+      where: { isOpen: true },
+    });
+
+    if (openDevices.length === 0) return;
+
+    for (const device of openDevices) {
+      // Find the most recent OPENED event for this device
+      const lastOpened = await prisma.gateEvent.findFirst({
+        where: { deviceId: device.id, event: 'OPENED' },
+        orderBy: { timestamp: 'desc' },
+      });
+
+      if (!lastOpened) continue;
+
+      const elapsedMs = Date.now() - new Date(lastOpened.timestamp).getTime();
+
+      const prefs = await prisma.notificationPreference.findMany({
+        where: {
+          openTooLongMin: { not: null },
+          fcmToken: { not: null },
+        },
+      });
+
+      for (const pref of prefs) {
+        const thresholdMs = pref.openTooLongMin * 60 * 1000;
+        const remainingMs = thresholdMs - elapsedMs;
+
+        const key = `${device.id}:${pref.userId}`;
+
+        if (remainingMs <= 0) {
+          // Already overdue — fire immediately
+          await sendPush(
+            pref.fcmToken,
+            'Gate Still Open',
+            `${device.name} has been open for ${pref.openTooLongMin} minute${pref.openTooLongMin === 1 ? '' : 's'}`,
+            { type: 'GATE_OPEN_TOO_LONG', deviceId: device.id }
+          );
+          console.log(`[notify] Recovered open-too-long alert (overdue) for device ${device.id}`);
+        } else {
+          // Start timer for remaining time
+          const timer = setTimeout(async () => {
+            openTooLongTimers.delete(key);
+            try {
+              const d = await prisma.device.findUnique({ where: { id: device.id } });
+              if (d && d.isOpen) {
+                await sendPush(
+                  pref.fcmToken,
+                  'Gate Still Open',
+                  `${device.name} has been open for ${pref.openTooLongMin} minute${pref.openTooLongMin === 1 ? '' : 's'}`,
+                  { type: 'GATE_OPEN_TOO_LONG', deviceId: device.id }
+                );
+              }
+            } catch (err) {
+              console.error('[notify] Recovered timer error:', err.message);
+            }
+          }, remainingMs);
+
+          openTooLongTimers.set(key, timer);
+          console.log(`[notify] Recovered open-too-long timer for device ${device.id}, ${Math.round(remainingMs / 1000)}s remaining`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[notify] Error recovering open-too-long timers:', err.message);
+  }
+}
+
 // ── App-facing WebSocket (real-time gate state to mobile) ─
 function initAppWebSocket(httpServer) {
   appWss = new WebSocketServer({ noServer: true });
@@ -291,4 +536,4 @@ function initAppWebSocket(httpServer) {
   return appWss;
 }
 
-module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected, sendOTAUpdate };
+module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected, sendOTAUpdate, recoverOpenTooLongTimers };

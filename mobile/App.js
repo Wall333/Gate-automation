@@ -13,6 +13,10 @@ import DeviceDetailScreen from './src/screens/DeviceDetailScreen';
 import DeviceSettingsScreen from './src/screens/DeviceSettingsScreen';
 import AddDeviceScreen from './src/screens/AddDeviceScreen';
 import UsersScreen from './src/screens/UsersScreen';
+import ActivityFeedScreen from './src/screens/ActivityFeedScreen';
+import NotificationPrefsScreen from './src/screens/NotificationPrefsScreen';
+import AboutScreen from './src/screens/AboutScreen';
+import usePushNotifications from './src/hooks/usePushNotifications';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -21,6 +25,9 @@ const Tab = createBottomTabNavigator();
 function MainTabs() {
   const { isAdmin, signOut } = useAuth();
   const insets = useSafeAreaInsets();
+
+  // Register for push notifications when authenticated
+  usePushNotifications();
 
   return (
     <Tab.Navigator
@@ -47,6 +54,15 @@ function MainTabs() {
           tabBarIcon: ({ color }) => <TabIcon label="📡" />,
         }}
       />
+      <Tab.Screen
+        name="Activity"
+        component={ActivityStack}
+        options={{
+          headerShown: false,
+          tabBarLabel: 'Activity',
+          tabBarIcon: ({ color }) => <TabIcon label="📋" />,
+        }}
+      />
       {isAdmin && (
         <Tab.Screen
           name="Users"
@@ -57,6 +73,14 @@ function MainTabs() {
           }}
         />
       )}
+      <Tab.Screen
+        name="About"
+        component={AboutScreen}
+        options={{
+          tabBarLabel: 'About',
+          tabBarIcon: ({ color }) => <TabIcon label="ℹ️" />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -93,6 +117,31 @@ function DevicesStack() {
         name="DeviceSettings"
         component={DeviceSettingsScreen}
         options={{ title: 'Device Settings' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ── Activity stack (feed → notification prefs) ──────────────────────
+function ActivityStack() {
+  const { signOut } = useAuth();
+
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="ActivityFeed"
+        component={ActivityFeedScreen}
+        options={{
+          title: 'Activity',
+          headerRight: () => (
+            <SignOutButton onPress={signOut} />
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="NotificationPrefs"
+        component={NotificationPrefsScreen}
+        options={{ title: 'Notifications' }}
       />
     </Stack.Navigator>
   );

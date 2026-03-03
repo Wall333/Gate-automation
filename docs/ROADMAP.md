@@ -1,13 +1,13 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.4.0  
+> **Current version:** v1.5.0  
 > **Last updated:** March 3, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.
 
 ---
 
-## What We Have Today (v1.0 – v1.4.0)
+## What We Have Today (v1.0 – v1.5.0)
 
 The Gate Controller is a smart gate system with three components: an **Android app**, a **cloud server**, and an **Arduino board** wired to the gate's relay. Here's what's already built:
 
@@ -18,6 +18,8 @@ The Gate Controller is a smart gate system with three components: an **Android a
 - **Gate state detection** — a magnetic reed switch on the gate reports whether it's open or closed, shown in the app in real time
 - **Real-time app updates** — gate state changes pushed to all connected app clients via WebSocket (no polling)
 - **Over-the-air firmware updates** — upload new firmware through the app and push it to the Arduino over WiFi (no USB needed)
+- **Activity feed** — timeline of every gate open/close event (app-triggered with user name, or manual/remote). Visible to all approved users
+- **Push notifications** — choose to be notified when the gate opens, closes, or has been open too long. Per-user preferences
 - Rename devices, view connection details
 - Full audit log of every gate open/close (who, when, success/fail)
 - Manage users: approve, deny, or remove
@@ -25,15 +27,11 @@ The Gate Controller is a smart gate system with three components: an **Android a
 
 ---
 
-## v1.5 — Stay in the Loop
+## ~~v1.5 — Stay in the Loop~~ ✅ Done
 
 *Know what's happening at your gate without opening the app.*
 
-### Push Notifications
-Get a notification on your phone whenever someone opens or closes the gate. You'll see who did it and which gate, right from your lock screen. No more checking the audit log to see if someone came through.
-
-### Activity Feed
-See the last few gate events right on the main screen when you open the app — a quick glance to see who's been coming and going. Currently this info is tucked away in the admin-only audit log.
+Activity feed (all users) showing every gate open/close event with user attribution for app toggles and "via remote / button" for manual use. Push notifications via Firebase Cloud Messaging with per-user preferences: notify on open, notify on close, and alert if gate open too long (configurable 1–30 min). See [V1_5_ACTIVITY_NOTIFICATIONS.md](specs/V1_5_ACTIVITY_NOTIFICATIONS.md) for full spec.
 
 ---
 
@@ -111,7 +109,7 @@ Update the Arduino's code over WiFi instead of plugging in a USB cable. Useful o
 | v1.2.1 | Admin remove user | Done |
 | v1.3 | Gate state sensing (reed switch) | Done |
 | v1.4 | Over-the-air firmware updates | Done |
-| v1.5 | Notifications & activity feed | Planned |
+| v1.5 | Notifications & activity feed | Done |
 | v1.6 | Guest access & dark mode | Planned |
 | v1.7 | Auto-close timer | Planned |
 | v2.0 | Roles, schedules, multi-gate | Planned |

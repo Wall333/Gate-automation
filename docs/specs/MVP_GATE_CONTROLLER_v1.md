@@ -14,6 +14,8 @@ Build a minimum viable gate controller that allows approved users to remotely to
 - Gate open/closed state detection via reed switch
 - Real-time gate state updates to app clients via WebSocket
 - Over-the-air firmware updates (admin uploads `.ota` file, pushes to device)
+- Activity feed with gate event history (all users)
+- Push notifications with per-user preferences (open, close, open-too-long)
 
 **Out of scope (future):**
 - Multiple gates
@@ -49,8 +51,8 @@ Build a minimum viable gate controller that allows approved users to remotely to
 
 | Component | Role |
 |-----------|------|
-| **Mobile App** | Google sign-in, display gate status (online/offline), TOGGLE button, admin panel (approve/deny users), firmware upload & OTA trigger |
-| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging, firmware storage & OTA delivery |
+| **Mobile App** | Google sign-in, display gate status (online/offline), TOGGLE button, admin panel (approve/deny users), firmware upload & OTA trigger, activity feed, notification preferences, About screen (version info) |
+| **Node.js Server** | Verify Google ID token, issue JWT, enforce approval, relay TOGGLE commands to Arduino via WebSocket, audit logging, firmware storage & OTA delivery, gate event recording, push notifications (FCM) |
 | **Arduino UNO R4 WiFi** | Maintain outbound WebSocket to server, listen for TOGGLE command, pulse relay, send heartbeat, receive OTA updates via `OTAUpdate` library |
 
 ---
@@ -182,6 +184,33 @@ If WebSocket proves unreliable on the Arduino hardware, fall back to:
 | version    | String   | User-supplied version label (optional) |
 | size       | Int      | File size in bytes |
 | uploadedAt | DateTime | |
+
+### GateEvent
+
+Records every gate state transition detected by the reed switch.
+
+| Column            | Type     | Notes |
+|-------------------|----------|-------|
+| id                | UUID PK  | Auto-generated |
+| deviceId          | UUID FK  | Which device reported the event |
+| event             | String   | `"OPENED"` \| `"CLOSED"` |
+| triggeredBy       | String?  | User name if app-triggered, `null` if manual/remote |
+| triggeredByUserId | String?  | FK to User, `null` for manual/remote events |
+| timestamp         | DateTime | When the state change occurred |
+
+### NotificationPreference
+
+Per-user notification settings.
+
+| Column         | Type     | Notes |
+|----------------|----------|-------|
+| id             | UUID PK  | Auto-generated |
+| userId         | UUID FK  | Unique — one row per user |
+| notifyOnOpen   | Boolean  | Notify when gate opens (default: false) |
+| notifyOnClose  | Boolean  | Notify when gate closes (default: false) |
+| openTooLongMin | Int?     | Notify if gate open longer than N minutes. `null` = disabled |
+| fcmToken       | String?  | Expo/FCM push token |
+| updatedAt      | DateTime | |
 
 **Storage (MVP):** SQLite via Prisma ORM (can migrate to PostgreSQL later).
 
@@ -428,6 +457,63 @@ Trigger an OTA update on a connected device. Requires `role: "admin"`. Sends an 
 { "ok": false, "error": "Device is not connected." }
 ```
 
+### 7.17 `GET /gate/events`
+
+Fetch recent gate events for the activity feed. Requires valid JWT (any approved user). Supports cursor-based pagination.
+
+**Query parameters:** `limit` (default 50, max 200), `deviceId` (optional), `before` (ISO timestamp, optional).
+
+**Response:**
+```json
+[
+  {
+    "id": "...",
+    "deviceId": "...",
+    "deviceName": "Front Gate",
+    "event": "OPENED",
+    "triggeredBy": "John Smith",
+    "timestamp": "2026-03-03T14:30:00Z"
+  }
+]
+```
+
+### 7.18 `GET /user/notification-preferences`
+
+Fetch the current user's notification preferences. Requires valid JWT. Returns defaults if no preferences exist.
+
+**Response:**
+```json
+{ "notifyOnOpen": false, "notifyOnClose": false, "openTooLongMin": null }
+```
+
+### 7.19 `PUT /user/notification-preferences`
+
+Update notification preferences. Requires valid JWT.
+
+**Request:**
+```json
+{ "notifyOnOpen": true, "notifyOnClose": false, "openTooLongMin": 5 }
+```
+
+**Response:**
+```json
+{ "notifyOnOpen": true, "notifyOnClose": false, "openTooLongMin": 5, "updatedAt": "..." }
+```
+
+### 7.20 `POST /user/fcm-token`
+
+Register or update the user's push notification token. Requires valid JWT.
+
+**Request:**
+```json
+{ "fcmToken": "<expo-push-token>" }
+```
+
+**Response:**
+```json
+{ "ok": true }
+```
+
 ---
 
 ## 8. Security Notes
@@ -453,6 +539,7 @@ Trigger an OTA update on a connected device. Requires `role: "admin"`. Sends an 
 | `GOOGLE_CLIENT_ID` | Server | Google OAuth client ID |
 | `ADMIN_EMAIL` | Server | Email of the first admin (seeded on startup) |
 | `DATABASE_URL` | Server | Prisma connection string (e.g. `file:./dev.db`) |
+| `FIREBASE_SERVICE_ACCOUNT` | Server | Path to Firebase service-account JSON file (optional — push notifications disabled if not set) |
 | _(Device token)_ | Arduino (EEPROM) | Auto-generated per device via `POST /admin/devices`, provisioned to Arduino by the mobile app |
 | _(WiFi SSID)_ | Arduino (EEPROM) | Auto-detected from phone's current WiFi, provisioned via mobile app |
 | _(WiFi password)_ | Arduino (EEPROM) | Entered by user during provisioning, stored in EEPROM |
@@ -516,10 +603,18 @@ Sign In (Google)
 24. Mobile: firmware upload via `expo-document-picker`, firmware list with push buttons, OTA status banner via WebSocket.
 25. Create `tools/bin2ota.py` conversion script (LZSS compression + CRC32 + magic header).
 
-### Phase 6 — Integration & Hardening
-26. End-to-end test: sign in → approve → toggle → verify audit log.
-27. Add rate limiting, input validation, error handling polish.
-28. Write deployment runbook and finalize README.
+### Phase 6 — Activity Feed & Notifications
+26. Add `GateEvent` and `NotificationPreference` models to Prisma; run migration.
+27. Update `deviceManager.js` GATE_STATE handler to create GateEvent with user attribution.
+28. Create `GET /gate/events`, `GET /user/notification-preferences`, `PUT /user/notification-preferences`, `POST /user/fcm-token` endpoints.
+29. Integrate `firebase-admin` for push notifications; implement open-too-long timers with server-restart recovery.
+30. Mobile: build Activity tab with feed screen, Notification Preferences screen, push registration (`expo-notifications`).
+31. Mobile: build About tab showing app version, build number, user info. `build.gradle` reads version from `app.json` dynamically.
+
+### Phase 7 — Integration & Hardening
+32. End-to-end test: sign in → approve → toggle → verify audit log.
+33. Add rate limiting, input validation, error handling polish.
+34. Write deployment runbook and finalize README.
 
 ---
 
@@ -554,7 +649,16 @@ Sign In (Google)
 | 25 | Admin can trigger OTA | `POST /admin/devices/:id/ota` with `{ firmwareId }` | OTA_UPDATE sent to device |
 | 26 | Device downloads firmware | OTA_UPDATE received → downloads from URL | OTA_STATUS messages sent |
 | 27 | App shows OTA progress | OTA_STATUS broadcast received | UI shows status banner |
+| 28 | Gate event logged on open | Open gate, check `GET /gate/events` | OPENED event with user attribution |
+| 29 | Manual open logged without user | Open via CAME remote, check events | OPENED event with `triggeredBy: null` |
+| 30 | Activity feed shows events | Open Activity tab | Timeline of events, newest first |
+| 31 | Real-time feed update | Open Activity tab, toggle gate elsewhere | New event appears without refresh |
+| 32 | Notification on gate open | Enable notifyOnOpen, open gate | Push notification received |
+| 33 | No self-notification | User A toggles with notifyOnOpen=true | User A does NOT get push |
+| 34 | Open-too-long alert fires | Set 1 min threshold, open gate, wait | "Gate Still Open" notification |
+| 35 | Open-too-long cancels on close | Set 1 min, open gate, close within 30s | No notification |
+| 36 | Notification prefs default off | New user checks prefs | All toggles off |
 
 ---
 
-*Spec version: v1.4.0 — March 3, 2026*
+*Spec version: v1.5.0 — March 3, 2026*

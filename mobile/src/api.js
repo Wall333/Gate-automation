@@ -246,3 +246,44 @@ export async function triggerOTA(deviceId, firmwareId) {
   if (!res.ok) throw new Error(data.error || 'Failed to trigger OTA update');
   return data;
 }
+
+// ── Activity Feed API ────────────────────────────────────────────────
+
+export async function getGateEvents({ limit = 50, deviceId, before } = {}) {
+  const params = new URLSearchParams();
+  if (limit) params.set('limit', String(limit));
+  if (deviceId) params.set('deviceId', deviceId);
+  if (before) params.set('before', before);
+  const query = params.toString();
+  const res = await authFetch(`/gate/events${query ? `?${query}` : ''}`);
+  if (!res.ok) throw new Error('Failed to fetch gate events');
+  return await res.json();
+}
+
+// ── Notification Preferences API ─────────────────────────────────────
+
+export async function getNotificationPreferences() {
+  const res = await authFetch('/user/notification-preferences');
+  if (!res.ok) throw new Error('Failed to fetch notification preferences');
+  return await res.json();
+}
+
+export async function updateNotificationPreferences(prefs) {
+  const res = await authFetch('/user/notification-preferences', {
+    method: 'PUT',
+    body: JSON.stringify(prefs),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to update notification preferences');
+  return data;
+}
+
+export async function registerFcmToken(fcmToken) {
+  const res = await authFetch('/user/fcm-token', {
+    method: 'POST',
+    body: JSON.stringify({ fcmToken }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to register FCM token');
+  return data;
+}

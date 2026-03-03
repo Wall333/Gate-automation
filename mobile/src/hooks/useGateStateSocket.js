@@ -3,17 +3,20 @@ import Config from '../config';
 
 /**
  * useGateStateSocket — connects to /app/ws and calls callbacks
- * whenever the server broadcasts GATE_STATE or OTA_STATUS events.
+ * whenever the server broadcasts GATE_STATE, OTA_STATUS, or GATE_EVENT messages.
  *
- * @param {function} onGateState  - callback({ deviceId, isOpen })
+ * @param {function} onGateState   - callback({ deviceId, isOpen })
  * @param {function} [onOTAStatus] - callback({ deviceId, status, message })
+ * @param {function} [onGateEvent] - callback({ type, id, deviceId, deviceName, event, triggeredBy, timestamp })
  */
-export default function useGateStateSocket(onGateState, onOTAStatus) {
+export default function useGateStateSocket(onGateState, onOTAStatus, onGateEvent) {
   const wsRef = useRef(null);
   const gateRef = useRef(onGateState);
   const otaRef = useRef(onOTAStatus);
+  const eventRef = useRef(onGateEvent);
   gateRef.current = onGateState;
   otaRef.current = onOTAStatus;
+  eventRef.current = onGateEvent;
 
   const connect = useCallback(() => {
     const wsUrl = Config.SERVER_URL.replace(/^http/, 'ws') + '/app/ws';
@@ -35,6 +38,9 @@ export default function useGateStateSocket(onGateState, onOTAStatus) {
             status: msg.status,
             message: msg.message,
           });
+        }
+        if (msg.type === 'GATE_EVENT' && eventRef.current) {
+          eventRef.current(msg);
         }
       } catch (err) {
         console.warn('[app/ws] Parse error:', err);
