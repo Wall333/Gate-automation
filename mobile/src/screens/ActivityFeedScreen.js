@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { getGateEvents } from '../api';
-import { useGateStateSocket } from '../hooks/useGateStateSocket';
+import useGateStateSocket from '../hooks/useGateStateSocket';
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
