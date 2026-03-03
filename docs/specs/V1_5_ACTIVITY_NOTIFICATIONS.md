@@ -285,14 +285,19 @@ The window accounts for:
 ### Notification sending
 
 - Expo Push API sends to individual push tokens.
-- If a token is invalid/expired (Expo returns `DeviceNotRegistered`), clear it from the database.
+- `sendPush()` returns a tri-state result: `'ok'` (delivered), `'expired'` (Expo returned `DeviceNotRegistered` — token is invalid), or `'error'` (temporary/config failure such as a missing FCM key).
+- Only clear the push token from the database on `'expired'`. On `'error'`, keep the token so future notifications can succeed once the config issue is resolved.
 - Don't send a push notification to the user who triggered the toggle (they already know). Check `triggeredByUserId !== user.id` before sending.
 
 ---
 
-## 7. Environment Variables (new)
+## 7. Environment & Credentials
 
-_No new environment variables required._ Push notifications use the Expo Push API which requires no server-side configuration.
+_No new server environment variables required._ Push notifications use the Expo Push API which requires no server-side configuration.
+
+**One-time setup required:**
+- **`google-services.json`** — Download from Firebase Console → Project Settings → General → Your apps (Android). Place at `mobile/android/app/google-services.json`. Excluded from git via `.gitignore`.
+- **FCM V1 service account key** — Download from Firebase Console → Project Settings → Service accounts → "Generate new private key". Upload to Expo via `npx eas credentials -p android` → Google Service Account → Set up for Push Notifications (FCM V1). This allows Expo's push service to authenticate with FCM.
 
 ---
 

@@ -8,7 +8,11 @@ All notable changes to the Gate Controller project are documented here.
 
 ### Added
 - **Firebase Cloud Messaging (FCM) transport** — Android push notifications now route through FCM. Added `google-services.json` (gitignored) and Google Services gradle plugin (`4.4.2`) to the Android build. No Firebase Admin SDK needed on the server — Expo Push API handles delivery.
+- **FCM V1 service account key** — Uploaded Firebase service account key to Expo via `eas credentials` so Expo's push service can authenticate with FCM V1. Required one-time setup step.
 - **Activity feed auto-refresh** — 30-second polling fallback for missed WebSocket events plus 30-second timestamp tick so relative times stay accurate.
+
+### Fixed
+- **Push token wrongly cleared on FCM config errors** — `sendPush` now returns `'ok'`, `'expired'`, or `'error'` so callers distinguish permanent token invalidity (`DeviceNotRegistered`) from temporary failures (e.g. missing FCM key). Tokens are only cleared on `'expired'`.
 
 ### Changed
 - **Documentation overhaul** — Updated README, ADR 0001, deploy runbook, SECURITY checklist, V1.5 spec, and ROADMAP to reflect Firebase/FCM requirement and activity feed improvements.

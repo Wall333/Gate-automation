@@ -89,6 +89,8 @@ DATABASE_URL=file:./prod.db
 > **Note:** `DEVICE_TOKEN` is no longer needed as a server environment variable. Device tokens are now auto-generated per device via the mobile app's "Add Device" flow (which calls `POST /admin/devices`).
 
 > **Note:** Push notifications use the **Expo Push API** — no Firebase Admin SDK or service account is needed on the server. However, the **Android build** requires a `google-services.json` file from a Firebase project (for FCM transport). This file is placed at `mobile/android/app/google-services.json` and is excluded from git.
+>
+> **FCM V1 credential (one-time setup):** A Firebase service account key must be uploaded to Expo so their push service can authenticate with FCM V1. Run `npx eas credentials -p android` → Google Service Account → Set up for Push Notifications (FCM V1) → provide the service account JSON downloaded from Firebase Console → Project Settings → Service accounts → "Generate new private key". This only needs to be done once per Expo project.
 
 ### Step 6: Run Database Migration
 
@@ -174,10 +176,10 @@ To also allow port 3000 (for testing before reverse proxy):
 
 ## Rollback
 
-1. Stop the server: `pm2 stop gate-server`
+1. Stop the server: `pm2 delete gate-server`
 2. Check out the previous known-good commit: `git checkout <commit-hash>`
 3. Run `npm install --omit=dev` and `npx prisma migrate deploy`
-4. Restart: `pm2 restart gate-server`
+4. Start: `pm2 start index.js --name gate-server && pm2 save`
 
 ## Monitoring
 
@@ -196,5 +198,9 @@ git pull origin main
 cd server
 npm install --omit=dev
 npx prisma migrate deploy
-pm2 restart gate-server
+pm2 delete gate-server
+pm2 start index.js --name gate-server
+pm2 save
 ```
+
+> **Important:** Use `pm2 delete` + `pm2 start` (not just `pm2 restart`) after Prisma schema changes or `npm install`. A simple restart keeps the old Node.js process memory which may have a stale Prisma client.

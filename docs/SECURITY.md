@@ -164,6 +164,7 @@ Use this checklist before going to production:
 - [ ] **SSH key auth** — disable password SSH login on the cloud VM
 - [ ] **`.env` not in git** — verified in `.gitignore`
 - [ ] **`google-services.json` not in git** — Firebase config excluded via `.gitignore`
+- [ ] **Firebase service account key not in git** — `*firebase-adminsdk*` pattern in `.gitignore`
 - [ ] **No secrets in source code** — config files use placeholders in the repo
 - [ ] **Admin email set** — `ADMIN_EMAIL` in `.env` points to your Google account
 - [ ] **Rate limiting active** — auth + global rate limits enabled
