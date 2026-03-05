@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-02-26  
-**Updated:** 2026-03-03 (v1.5.3)
+**Updated:** 2026-03-05 (v1.5.4 — HTTPS via Caddy + DuckDNS)
 
 ## Context
 
@@ -60,7 +60,7 @@ We need to choose technologies for three components of the gate controller syste
 - **Expo (React Native):** Single codebase for Android and iOS. Expo's managed workflow simplifies builds, push notifications, and native module management. The `expo-notifications` library works with Expo Push API for zero-config push delivery.
 - **Expo Push API + Firebase Cloud Messaging:** The server sends a simple HTTP POST to Expo's push service, which routes to FCM (Android) or APNs (iOS) transparently. On Android, a Firebase project is required to provide the FCM transport layer (`google-services.json` in the Android build). No Firebase Admin SDK or service account is needed on the server. Free for both platforms.
 - **Arduino UNO R4 WiFi:** Affordable, widely available, built-in WiFi via the on-board ESP32-S3 module. Sufficient for receiving simple commands and pulsing a relay.
-- **WebSocket (outbound):** The Arduino connects outward to the server, avoiding NAT/firewall issues. Provides near-instant command delivery without polling overhead. Dual WebSocket paths separate device traffic from app client traffic.
+- **WebSocket (outbound):** The Arduino connects outward to the server, avoiding NAT/firewall issues. Provides near-instant command delivery without polling overhead. Dual WebSocket paths separate device traffic from app client traffic. Uses `WiFiSSLClient` for TLS (WSS) through the Caddy reverse proxy.
 
 ## Consequences
 
@@ -69,3 +69,4 @@ We need to choose technologies for three components of the gate controller syste
 - Arduino UNO R4 WiFi has limited RAM (~256 KB); WebSocket payloads must stay small.
 - Expo Push API depends on Expo's servers for push delivery — acceptable trade-off for simple configuration.
 - Android builds require a `google-services.json` from a Firebase project (excluded from git via `.gitignore`).
+- All traffic (app → server, Arduino → server) is encrypted via TLS. Caddy reverse proxy terminates TLS on `gatecontroller.duckdns.org` with auto-renewing Let's Encrypt certificates.

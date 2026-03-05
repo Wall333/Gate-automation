@@ -39,16 +39,15 @@ All communication should go through the cloud server. The phone and Arduino neve
 
 **Risk**: HIGH — Without HTTPS, JWT tokens, Google ID tokens, and API data travel in plain text. Anyone on the same network can intercept them.
 
-**Current Status**: The development setup uses plain HTTP (`http://192.168.1.166:3000`). The Android app has `usesCleartextTraffic: true` to allow this.
+**Current Status**: ✅ **Mitigated.** Production uses HTTPS via Caddy reverse proxy with a Let's Encrypt TLS certificate on `gatecontroller.duckdns.org`. The mobile app connects exclusively over HTTPS. The `usesCleartextTraffic` flag remains in `app.json` solely for the Arduino provisioning flow (local AP at `192.168.4.1`).
 
-**Mitigation**:
-- In production, **always use HTTPS**. Set up a reverse proxy (Nginx or Caddy) with a free TLS certificate from Let's Encrypt.
-- Once HTTPS is configured, remove `usesCleartextTraffic: true` from `app.json`.
-- Use Caddy for the simplest setup — it handles TLS certificates automatically.
+**Setup**:
+- Caddy reverse proxy on the GCP VM handles TLS automatically (Let's Encrypt).
+- DuckDNS provides the free domain (`gatecontroller.duckdns.org`) with a cron job to keep the IP updated.
 
-```bash
-# Example Caddy config (Caddyfile)
-gate.yourdomain.com {
+```
+# /etc/caddy/Caddyfile
+gatecontroller.duckdns.org {
     reverse_proxy localhost:3000
 }
 ```
@@ -155,12 +154,12 @@ gate.yourdomain.com {
 
 Use this checklist before going to production:
 
-- [ ] **HTTPS enabled** — TLS certificate configured via Let's Encrypt / Caddy
-- [ ] **`usesCleartextTraffic` removed** from `app.json` (after HTTPS is confirmed)
+- [x] **HTTPS enabled** — TLS certificate via Let's Encrypt / Caddy on `gatecontroller.duckdns.org`
+- [ ] **`usesCleartextTraffic` removed** from `app.json` (kept for Arduino provisioning over local AP)
 - [ ] **Strong JWT_SECRET** — at least 32 random characters
 - [ ] **Per-device tokens** — generated automatically via admin API (no manual shared secret)
 - [ ] **Firewall rules** — only ports 22 (SSH), 80, 443 open on the cloud VM
-- [ ] **Port 3000 closed** — server only accessible via reverse proxy
+- [ ] **Port 3000 closed** — server only accessible via reverse proxy (close after Arduino OTA to WSS)
 - [ ] **SSH key auth** — disable password SSH login on the cloud VM
 - [ ] **`.env` not in git** — verified in `.gitignore`
 - [ ] **`google-services.json` not in git** — Firebase config excluded via `.gitignore`

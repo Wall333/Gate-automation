@@ -81,7 +81,7 @@ const uint32_t tickFrame[] = {
 
 // ── Runtime state ────────────────────────────────────────────────────
 bool          provisioning  = false;
-WiFiClient    wifiClient;
+WiFiSSLClient wifiClient;
 WebSocketClient* wsClient   = nullptr;
 
 unsigned long lastHeartbeat  = 0;
@@ -154,8 +154,18 @@ void setup() {
     Serial.println(F("[boot] Config found — starting normal mode"));
     provisioning = false;
 
-    // Create WebSocket client with stored config
+    // ── EEPROM migration: update server host/port for HTTPS ──
     DeviceConfig& cfg = getConfig();
+    if (strcmp(cfg.serverHost, "gatecontroller.duckdns.org") != 0 || cfg.serverPort != 443) {
+      Serial.println(F("[boot] Migrating EEPROM to WSS (gatecontroller.duckdns.org:443)"));
+      strncpy(cfg.serverHost, "gatecontroller.duckdns.org", sizeof(cfg.serverHost) - 1);
+      cfg.serverHost[sizeof(cfg.serverHost) - 1] = '\0';
+      cfg.serverPort = 443;
+      saveConfig(cfg);
+      Serial.println(F("[boot] EEPROM migration complete"));
+    }
+
+    // Create WebSocket client with stored config
     wsClient = new WebSocketClient(wifiClient, cfg.serverHost, cfg.serverPort);
 
     connectWiFi();

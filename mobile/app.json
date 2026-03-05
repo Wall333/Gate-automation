@@ -4,7 +4,7 @@
     "slug": "mobile",
     "scheme": "gate-controller",
     "owner": "wall333",
-    "version": "1.5.3",
+    "version": "1.5.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +17,7 @@
       "supportsTablet": true
     },
     "android": {
-      "versionCode": 10503,
+      "versionCode": 10504,
       "package": "com.wall333.gatecontroller",
       "usesCleartextTraffic": true,
       "adaptiveIcon": {

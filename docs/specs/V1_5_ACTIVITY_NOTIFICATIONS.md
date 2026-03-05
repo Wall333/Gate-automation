@@ -1,6 +1,6 @@
 # v1.5 — Stay in the Loop: Activity Feed & Notifications
 
-> **Version:** v1.5.3  
+> **Version:** v1.5.4  
 > **Date:** March 3, 2026  
 > **Status:** Released
 
@@ -231,11 +231,11 @@ Tabs:  [ Devices 📡 ]  [ Activity 📋 ]  [ Users 👥 (admin) ]
 
 - Displays a scrollable list of gate events, newest first.
 - Each event shows:
-  - **Icon/color:** Green circle for OPENED, red circle for CLOSED
+  - **Icon/color:** Red circle for OPENED, green circle for CLOSED
   - **Title:** "Gate Opened" / "Gate Closed"
   - **Subtitle:** "by John Smith" or "via remote/button" (if `triggeredBy` is null)
   - **Device name** (if multiple devices in future)
-  - **Timestamp:** Relative ("2 min ago") for recent, absolute ("Mar 3, 2:30 PM") for older
+  - **Timestamp:** Absolute date + time (e.g. "Mar 3, 2:45 PM")
 - Pull-to-refresh to reload
 - Load more on scroll (cursor-based pagination via `before` param)
 - Real-time updates: new events pushed via existing WebSocket `GATE_STATE` messages are prepended to the list without manual refresh

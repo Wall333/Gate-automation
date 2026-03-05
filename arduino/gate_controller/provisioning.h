@@ -342,7 +342,7 @@ void handleProvisioningClients() {
     newCfg.password[sizeof(newCfg.password) - 1] = '\0';
     strncpy(newCfg.serverHost,  doc["serverHost"]   | "", sizeof(newCfg.serverHost) - 1);
     newCfg.serverHost[sizeof(newCfg.serverHost) - 1] = '\0';
-    newCfg.serverPort = doc["serverPort"] | 3000;
+    newCfg.serverPort = doc["serverPort"] | 443;
     strncpy(newCfg.deviceToken, doc["deviceToken"]  | "", sizeof(newCfg.deviceToken) - 1);
     newCfg.deviceToken[sizeof(newCfg.deviceToken) - 1] = '\0';
 

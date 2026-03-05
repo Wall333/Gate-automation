@@ -165,7 +165,8 @@ router.post(
 
       // Build the download URL the Arduino will use
       const serverHost = req.headers.host || `${req.hostname}:${req.socket.localPort}`;
-      const firmwareUrl = `http://${serverHost}/firmware/download/${firmware.storedName}`;
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const firmwareUrl = `${protocol}://${serverHost}/firmware/download/${firmware.storedName}`;
 
       // Send OTA_UPDATE command to the device
       sendOTAUpdate(id, firmwareUrl);

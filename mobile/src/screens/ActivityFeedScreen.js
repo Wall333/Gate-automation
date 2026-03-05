@@ -15,15 +15,6 @@ import useGateStateSocket from '../hooks/useGateStateSocket';
 
 function formatTimestamp(isoString) {
   const date = new Date(isoString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin} min ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-
   return date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -38,7 +29,7 @@ function EventRow({ item }) {
   const isOpen = item.event === 'OPENED';
   return (
     <View style={styles.row}>
-      <View style={[styles.dot, { backgroundColor: isOpen ? '#34C759' : '#FF3B30' }]} />
+      <View style={[styles.dot, { backgroundColor: isOpen ? '#FF3B30' : '#34C759' }]} />
       <View style={styles.rowContent}>
         <Text style={styles.eventTitle}>
           Gate {isOpen ? 'Opened' : 'Closed'}
@@ -61,7 +52,6 @@ export default function ActivityFeedScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [tick, setTick] = useState(0); // forces timestamp re-render
   const isMounted = useRef(true);
 
   // ── Fetch initial events ─────────────────────────────
@@ -95,12 +85,6 @@ export default function ActivityFeedScreen({ navigation }) {
     }, 30_000);
     return () => clearInterval(interval);
   }, [fetchEvents]);
-
-  // ── Refresh timestamps every 30s ─────────────────────
-  useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => clearInterval(interval);
-  }, []);
 
   // ── Pull to refresh ──────────────────────────────────
   const onRefresh = useCallback(() => {
@@ -161,7 +145,7 @@ export default function ActivityFeedScreen({ navigation }) {
   return (
     <FlatList
       data={events}
-      extraData={tick}
+      extraData={events}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => <EventRow item={item} />}
       contentContainerStyle={events.length === 0 ? styles.center : styles.list}

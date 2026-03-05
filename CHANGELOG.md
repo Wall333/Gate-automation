@@ -4,12 +4,27 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.4] — 2026-03-05
+
+### Added
+- **HTTPS via Caddy reverse proxy** — Production server now uses HTTPS with a Let's Encrypt TLS certificate on `gatecontroller.duckdns.org`. Caddy auto-provisions and renews the certificate. DuckDNS cron job keeps the domain pointed at the VM IP.
+- **Arduino WSS migration** — Arduino firmware updated from `WiFiClient` to `WiFiSSLClient` for encrypted WebSocket connections through Caddy. On first boot after OTA, the firmware auto-migrates EEPROM config from the old `IP:3000` to `gatecontroller.duckdns.org:443`.
+
+### Changed
+- **Activity feed dot colours** — Red dot for gate opened, green dot for gate closed (was inverted).
+- **Activity feed timestamps** — Now always shows absolute date + time (e.g. "Mar 3, 2:45 PM") instead of relative ("5 min ago").
+- **Removed timestamp tick interval** — The 30-second UI tick that refreshed relative timestamps is no longer needed and has been removed.
+- **Server firmware URL** — OTA download URL now uses the request protocol (`X-Forwarded-Proto` from Caddy) instead of hardcoded `http://`.
+- **Mobile provisioning defaults** — New device provisioning defaults to port 443 (was 3000) matching the HTTPS setup.
+
+---
+
 ## [v1.5.3] — 2026-03-03
 
 ### Added
 - **Firebase Cloud Messaging (FCM) transport** — Android push notifications now route through FCM. Added `google-services.json` (gitignored) and Google Services gradle plugin (`4.4.2`) to the Android build. No Firebase Admin SDK needed on the server — Expo Push API handles delivery.
 - **FCM V1 service account key** — Uploaded Firebase service account key to Expo via `eas credentials` so Expo's push service can authenticate with FCM V1. Required one-time setup step.
-- **Activity feed auto-refresh** — 30-second polling fallback for missed WebSocket events plus 30-second timestamp tick so relative times stay accurate.
+- **Activity feed auto-refresh** — 30-second polling fallback for missed WebSocket events.
 
 ### Fixed
 - **Push token wrongly cleared on FCM config errors** — `sendPush` now returns `'ok'`, `'expired'`, or `'error'` so callers distinguish permanent token invalidity (`DeviceNotRegistered`) from temporary failures (e.g. missing FCM key). Tokens are only cleared on `'expired'`.

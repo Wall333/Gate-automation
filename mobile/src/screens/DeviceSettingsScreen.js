@@ -32,7 +32,7 @@ export default function DeviceSettingsScreen() {
   try {
     const url = new URL(Config.SERVER_URL);
     serverHost = url.hostname;
-    serverPort = url.port || '3000';
+    serverPort = url.port || (url.protocol === 'https:' ? '443' : '3000');
   } catch {
     serverHost = Config.SERVER_URL;
   }

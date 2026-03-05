@@ -127,9 +127,47 @@ sudo ufw allow 3000
 sudo ufw enable
 ```
 
-> **Note**: Port 3000 is open temporarily for testing. Once a reverse proxy (Caddy/Nginx) is set up with HTTPS, close port 3000 and only allow 80/443.
+> **Note**: Port 3000 must remain open while the Arduino connects directly via `ws://IP:3000`. Once the Arduino firmware is updated to use `wss://gatecontroller.duckdns.org`, port 3000 can be closed.
 
-### Step 9: Verify
+### Step 9: Install Caddy (HTTPS Reverse Proxy)
+
+```bash
+curl -o /tmp/caddy.deb -L "https://github.com/caddyserver/caddy/releases/download/v2.9.1/caddy_2.9.1_linux_amd64.deb"
+sudo dpkg -i /tmp/caddy.deb
+```
+
+Create the Caddyfile:
+```bash
+sudo tee /etc/caddy/Caddyfile > /dev/null <<'EOF'
+gatecontroller.duckdns.org {
+    reverse_proxy localhost:3000
+}
+EOF
+
+sudo systemctl restart caddy
+sudo systemctl enable caddy
+```
+
+Caddy automatically obtains and renews a Let's Encrypt TLS certificate. Verify:
+```bash
+curl https://gatecontroller.duckdns.org/health
+# Expected: {"status":"ok","timestamp":"..."}
+```
+
+### Step 9.1: DuckDNS Auto-Update
+
+Keeps the DNS record pointed at the VM’s current IP (runs every 5 minutes via cron):
+```bash
+mkdir -p ~/duckdns
+tee ~/duckdns/duck.sh > /dev/null <<'EOF'
+#!/bin/bash
+echo url="https://www.duckdns.org/update?domains=gatecontroller&token=<YOUR_DUCKDNS_TOKEN>&ip=" | curl -k -o ~/duckdns/duck.log -K -
+EOF
+chmod +x ~/duckdns/duck.sh
+(crontab -l 2>/dev/null; echo "*/5 * * * * ~/duckdns/duck.sh >/dev/null 2>&1") | crontab -
+```
+
+### Step 10: Verify
 
 ```bash
 curl http://localhost:3000/health
@@ -145,7 +183,7 @@ http://<YOUR_VM_EXTERNAL_IP>:3000/health
 
 Update `mobile/src/config.js`:
 ```js
-SERVER_URL: 'http://<YOUR_VM_EXTERNAL_IP>:3000',
+SERVER_URL: 'https://gatecontroller.duckdns.org',
 ```
 
 Rebuild APK locally (`cd mobile/android && .\gradlew.bat assembleRelease`) or via EAS (`npx eas build --platform android --profile preview`).
@@ -167,10 +205,10 @@ To also allow port 3000 (for testing before reverse proxy):
 
 ## Future Steps
 
-- [ ] Set up Caddy reverse proxy for HTTPS (Let's Encrypt)
-- [ ] Close port 3000 after reverse proxy is configured
-- [ ] Add a domain name (optional, ~$10/year)
-- [ ] Remove `usesCleartextTraffic: true` from app.json after HTTPS
+- [x] Set up Caddy reverse proxy for HTTPS (Let's Encrypt)
+- [ ] Close port 3000 after Arduino OTA to WSS is confirmed working
+- [x] Add a domain name — `gatecontroller.duckdns.org` (DuckDNS, free)
+- [ ] Remove `usesCleartextTraffic: true` from `app.json` (kept for Arduino local AP provisioning)
 - [ ] Set up daily database backups (cron job)
 - [ ] Disable SSH password login
 

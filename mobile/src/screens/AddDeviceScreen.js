@@ -60,10 +60,10 @@ export default function AddDeviceScreen() {
     try {
       const url = new URL(Config.SERVER_URL);
       setServerHost(url.hostname);
-      setServerPort(url.port || '3000');
+      setServerPort(url.port || (url.protocol === 'https:' ? '443' : '3000'));
     } catch {
       setServerHost('');
-      setServerPort('3000');
+      setServerPort('443');
     }
   }, []);
 
@@ -145,7 +145,7 @@ export default function AddDeviceScreen() {
             ssid,
             password,
             serverHost,
-            serverPort: parseInt(serverPort, 10) || 3000,
+            serverPort: parseInt(serverPort, 10) || 443,
             deviceToken,
           }),
         },
@@ -345,7 +345,7 @@ export default function AddDeviceScreen() {
               style={styles.input}
               value={serverPort}
               onChangeText={setServerPort}
-              placeholder="3000"
+              placeholder="443"
               keyboardType="numeric"
             />
 
