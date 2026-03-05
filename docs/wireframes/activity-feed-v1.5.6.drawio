@@ -1,5 +1,5 @@
 <mxfile host="65bd71144e">
-    <diagram id="activity-feed-v156" name="Activity Feed v1.5.6 — Month Nav + 7-Day Strip">
+    <diagram id="activity-feed-v156" name="Activity Feed v1.5.6 — Month Nav + 30-Day Strip">
         <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
@@ -235,7 +235,7 @@
                     </mxGeometry>
                 </mxCell>
 
-                <mxCell id="note2" value="7-day strip (not scrollable).&#xa;Ends at today (current month)&#xa;or last day of viewed month.&#xa;Blue chip = selected day." style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                <mxCell id="note2" value="30-day scrollable strip.&#xa;Ends at today (current month)&#xa;or last day of viewed month.&#xa;Blue chip = selected day." style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
                     <mxGeometry x="780" y="140" width="210" height="64" as="geometry"/>
                 </mxCell>
                 <mxCell id="note2arrow" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="note2">

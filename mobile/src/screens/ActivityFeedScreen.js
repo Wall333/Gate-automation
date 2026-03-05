@@ -3,6 +3,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
@@ -13,7 +14,7 @@ import useGateStateSocket from '../hooks/useGateStateSocket';
 
 // ── Constants ────────────────────────────────────────────────────────
 
-const DATE_STRIP_DAYS = 7;
+const DATE_STRIP_DAYS = 30;
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -291,16 +292,24 @@ export default function ActivityFeedScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* ── Date strip (7 days) ─────────────────── */}
-      <FlatList
-        data={stripDates}
-        horizontal
-        keyExtractor={(item) => item}
-        renderItem={renderDateChip}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.dateStrip}
-        style={styles.dateStripContainer}
-      />
+      {/* ── Date strip (30 days) ────────────────── */}
+      <View style={styles.dateStripContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.dateStrip}
+        >
+          {stripDates.map((dateStr) => (
+            <DateChip
+              key={dateStr}
+              dateStr={dateStr}
+              isSelected={isSameDay(dateStr, selectedDate)}
+              isToday={isSameDay(dateStr, todayStr)}
+              onPress={() => onSelectDate(dateStr)}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
       {/* ── Day summary ─────────────────────────── */}
       {!loading && events.length > 0 && (
@@ -385,8 +394,6 @@ const styles = StyleSheet.create({
   dateStrip: {
     paddingHorizontal: 8,
     paddingVertical: 8,
-    justifyContent: 'center',
-    flexGrow: 1,
   },
   chip: {
     width: 46,
@@ -417,8 +424,7 @@ const styles = StyleSheet.create({
   // ── Summary ──
   summary: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+    paddingVertical: 4,
     backgroundColor: '#F5F5F5',
   },
   summaryText: {

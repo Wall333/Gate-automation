@@ -7,13 +7,14 @@ All notable changes to the Gate Controller project are documented here.
 ## [v1.5.6] — 2026-03-05
 
 ### Changed
-- **Activity feed redesigned** — Replaced infinite-scroll timeline with a horizontal date strip. Tap any of the last 90 days to see that day's events. Today's chip is highlighted blue and labelled "Today." A summary bar shows event counts (e.g. "8 events · 4 opened · 4 closed"). Timestamps are time-only since the selected day is always visible in the strip.
-- **Day-scoped event API** — `GET /gate/events` now accepts an optional `date` query param (`YYYY-MM-DD`) to return events for a single day. Default limit raised from 50 to 200.
-- **Real-time updates scoped to today** — WebSocket live-push and auto-poll only fire when the selected day is today, avoiding stale-data flicker on historical days.
-- **Empty state** — Days with no activity show a 📭 "No activity on this day" message instead of an empty list.
+- **Activity feed redesigned** — Horizontal date strip with month navigation arrows (`‹ March 2026 ›`). 30-day scrollable strip using `ScrollView` for correct layout height. Tap any chip to view that day's events; today is highlighted blue.
+- **Timezone-safe event filtering** — Client sends `dateStart`/`dateEnd` as UTC ISO strings computed from local day boundaries, replacing the bare `date` param. Server `GET /gate/events` accepts both new params (preferred) and legacy `date` (UTC fallback).
+- **Day summary bar** — Compact summary ("8 events · 4 opened · 4 closed") sits cleanly below the date strip.
+- **Real-time updates scoped to today** — WebSocket live-push and 30 s auto-poll only fire when viewing today.
+- **Empty state** — Days with no activity show 📭 "No activity on this day."
 
 ### Added
-- **UI wireframe** — Added `docs/wireframes/activity-feed-v2.drawio` wireframe for the new activity feed design.
+- **UI wireframes** — Added `docs/wireframes/` with wireframes for all 9 app screens, versioned to the release they reflect.
 
 ---
 
