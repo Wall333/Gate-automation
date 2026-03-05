@@ -1,0 +1,68 @@
+<mxfile host="65bd71144e">
+    <diagram id="sign-in" name="Sign In — v1.5.0">
+        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <!-- Phone frame -->
+                <mxCell id="phone" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F5F5F5;strokeColor=#333333;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="20" width="360" height="740" as="geometry"/>
+                </mxCell>
+                <!-- Status bar -->
+                <mxCell id="sb" value="9:41 AM" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=#E8E8E8;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="20" width="360" height="24" as="geometry"/>
+                </mxCell>
+                <!-- App icon -->
+                <mxCell id="icon" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=18;fillColor=#4285F4;strokeColor=#3367D6;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="530" y="200" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="iconLabel" value="🚪" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=48;" vertex="1" parent="1">
+                    <mxGeometry x="540" y="210" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <!-- Title -->
+                <mxCell id="title" value="Gate Controller" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="320" width="300" height="40" as="geometry"/>
+                </mxCell>
+                <!-- Subtitle -->
+                <mxCell id="subtitle" value="Sign in to control your gate" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontColor=#666666;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="360" width="300" height="30" as="geometry"/>
+                </mxCell>
+                <!-- Pending approval box (conditional) -->
+                <mxCell id="pendingBox" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FFF3CD;strokeColor=#FFEEBA;strokeWidth=1;dashed=1;dashPattern=5 3;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="420" width="300" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pendingIcon" value="⏳" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=24;" vertex="1" parent="1">
+                    <mxGeometry x="440" y="428" width="40" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pendingText" value="Your account is pending&#xa;admin approval." style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=13;fontColor=#856404;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="428" width="240" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="pendingNote" value="(conditional — shown when pending)" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;fontStyle=2;fontColor=#CCCCCC;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="482" width="300" height="16" as="geometry"/>
+                </mxCell>
+                <!-- Sign in with Google button -->
+                <mxCell id="googleBtn" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#4285F4;strokeColor=#3367D6;strokeWidth=1;shadow=1;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="510" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="googleText" value="Sign in with Google" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="510" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <!-- Dev Login button -->
+                <mxCell id="devBtn" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FF9800;strokeColor=#E68900;strokeWidth=1;dashed=1;dashPattern=5 3;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="575" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="devText" value="🔧 Dev Login" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="575" width="300" height="50" as="geometry"/>
+                </mxCell>
+                <!-- Dev note -->
+                <mxCell id="devNote" value="Dev mode only — hidden in production builds" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=12;fontColor=#999999;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="630" width="300" height="20" as="geometry"/>
+                </mxCell>
+                <!-- Version label -->
+                <mxCell id="ver" value="v1.5.0" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#CCCCCC;" vertex="1" parent="1">
+                    <mxGeometry x="530" y="730" width="100" height="20" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

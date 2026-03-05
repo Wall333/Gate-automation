@@ -1,0 +1,280 @@
+<mxfile host="65bd71144e">
+    <diagram id="activity-feed-v156" name="Activity Feed v1.5.6 — Month Nav + 7-Day Strip">
+        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+
+                <!-- Phone frame -->
+                <mxCell id="phone" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#FFFFFF;strokeColor=#333333;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="20" width="360" height="740" as="geometry"/>
+                </mxCell>
+
+                <!-- Status bar -->
+                <mxCell id="statusbar" value="4:15 PM" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#E8E8E8;fontSize=11;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="20" width="360" height="24" as="geometry"/>
+                </mxCell>
+
+                <!-- Header bar -->
+                <mxCell id="header" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDDDDD;strokeWidth=1;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="44" width="360" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="headerTitle" value="Activity" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=17;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="530" y="48" width="100" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="bellIcon" value="🔔" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=18;" vertex="1" parent="1">
+                    <mxGeometry x="714" y="50" width="36" height="32" as="geometry"/>
+                </mxCell>
+
+                <!-- ── Month navigation row: ‹  March 2026  › ── -->
+                <mxCell id="monthRowBg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="88" width="360" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="monthPrev" value="‹" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=24;fontStyle=1;fontColor=#4285F4;" vertex="1" parent="1">
+                    <mxGeometry x="470" y="90" width="30" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="monthLabel" value="March 2026" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="510" y="90" width="140" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="monthNext" value="›" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=24;fontStyle=1;fontColor=#CCCCCC;" vertex="1" parent="1">
+                    <mxGeometry x="660" y="90" width="30" height="32" as="geometry"/>
+                </mxCell>
+
+                <!-- ── Date strip background (7 chips) ── -->
+                <mxCell id="dateStripBg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDDDDD;strokeWidth=1;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="124" width="360" height="76" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 1: Thu 27 Feb -->
+                <mxCell id="chip1" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#F0F0F0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="408" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip1day" value="Thu" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="412" y="133" width="38" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip1num" value="27" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="414" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 2: Fri 28 Feb -->
+                <mxCell id="chip2" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#F0F0F0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="458" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip2day" value="Fri" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="462" y="133" width="38" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip2num" value="28" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="464" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 3: Sat 1 Mar -->
+                <mxCell id="chip3" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#F0F0F0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="508" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip3day" value="Sat" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="512" y="133" width="38" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip3num" value="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="514" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 4: Sun 2 -->
+                <mxCell id="chip4" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#F0F0F0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="558" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip4day" value="Sun" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="562" y="133" width="38" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip4num" value="2" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="564" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 5: Mon 3 -->
+                <mxCell id="chip5" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#F0F0F0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="608" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip5day" value="Mon" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="612" y="133" width="38" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip5num" value="3" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="614" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 6: Tue 4 -->
+                <mxCell id="chip6" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#F0F0F0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="658" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip6day" value="Tue" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="662" y="133" width="38" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip6num" value="4" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+                    <mxGeometry x="664" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Chip 7: Today 5 (SELECTED — blue) -->
+                <mxCell id="chip7" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=30;fillColor=#4285F4;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="708" y="132" width="46" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip7day" value="Today" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+                    <mxGeometry x="710" y="133" width="42" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="chip7num" value="5" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+                    <mxGeometry x="714" y="155" width="34" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- ── Day summary ── -->
+                <mxCell id="summaryBg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="200" width="360" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="summaryText" value="8 events  ·  4 opened  ·  4 closed" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#888888;fontStyle=0;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="206" width="240" height="24" as="geometry"/>
+                </mxCell>
+
+                <!-- Event rows area -->
+                <mxCell id="eventsArea" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="234" width="360" height="436" as="geometry"/>
+                </mxCell>
+
+                <!-- Event 1: Gate Opened -->
+                <mxCell id="dot1" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF3B30;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="248" width="12" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev1title" value="Gate Opened" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=15;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="240" width="120" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev1sub" value="by Jordan  ·  Driveway Gate" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="260" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev1time" value="4:12 PM" style="text;html=1;align=right;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#AAAAAA;" vertex="1" parent="1">
+                    <mxGeometry x="690" y="248" width="60" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="divider1" value="" style="line;strokeWidth=0.5;strokeColor=#E0E0E0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="284" width="328" height="1" as="geometry"/>
+                </mxCell>
+
+                <!-- Event 2: Gate Closed -->
+                <mxCell id="dot2" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#34C759;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="300" width="12" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev2title" value="Gate Closed" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=15;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="292" width="120" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev2sub" value="by Jordan  ·  Driveway Gate" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="312" width="200" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev2time" value="4:12 PM" style="text;html=1;align=right;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#AAAAAA;" vertex="1" parent="1">
+                    <mxGeometry x="690" y="300" width="60" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="divider2" value="" style="line;strokeWidth=0.5;strokeColor=#E0E0E0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="336" width="328" height="1" as="geometry"/>
+                </mxCell>
+
+                <!-- Event 3: Gate Opened (remote) -->
+                <mxCell id="dot3" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF3B30;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="352" width="12" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev3title" value="Gate Opened" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=15;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="344" width="120" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev3sub" value="via remote / button  ·  Driveway Gate" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="364" width="260" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev3time" value="2:30 PM" style="text;html=1;align=right;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#AAAAAA;" vertex="1" parent="1">
+                    <mxGeometry x="690" y="352" width="60" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="divider3" value="" style="line;strokeWidth=0.5;strokeColor=#E0E0E0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="388" width="328" height="1" as="geometry"/>
+                </mxCell>
+
+                <!-- Event 4: Gate Closed -->
+                <mxCell id="dot4" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#34C759;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="404" width="12" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev4title" value="Gate Closed" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=15;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="396" width="120" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev4sub" value="via remote / button  ·  Driveway Gate" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="436" y="416" width="260" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ev4time" value="2:31 PM" style="text;html=1;align=right;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#AAAAAA;" vertex="1" parent="1">
+                    <mxGeometry x="690" y="404" width="60" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="divider4" value="" style="line;strokeWidth=0.5;strokeColor=#E0E0E0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="440" width="328" height="1" as="geometry"/>
+                </mxCell>
+
+                <!-- More events indicator -->
+                <mxCell id="moreEvents" value="· · ·" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontColor=#CCCCCC;" vertex="1" parent="1">
+                    <mxGeometry x="550" y="444" width="60" height="30" as="geometry"/>
+                </mxCell>
+
+                <!-- Bottom tab bar -->
+                <mxCell id="tabbar" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDDDDD;strokeWidth=1;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="700" width="360" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="tab1" value="🏠&#xa;Devices" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="706" width="60" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="tab2" value="📋&#xa;Activity" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontStyle=1;fontColor=#4285F4;" vertex="1" parent="1">
+                    <mxGeometry x="510" y="706" width="60" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="tab3" value="ℹ️&#xa;About" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="706" width="60" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="tab4" value="👥&#xa;Users" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="690" y="706" width="60" height="48" as="geometry"/>
+                </mxCell>
+
+                <!-- ── Annotations ── -->
+                <mxCell id="note1" value="‹ › arrows navigate months.&#xa;Right arrow disabled when&#xa;already on current month." style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="80" width="200" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="note1arrow" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="note1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="760" y="106" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="note2" value="7-day strip (not scrollable).&#xa;Ends at today (current month)&#xa;or last day of viewed month.&#xa;Blue chip = selected day." style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="140" width="210" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="note2arrow" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="note2">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="760" y="162" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="note3" value="Day summary —&#xa;event counts&#xa;(clear spacing from strip)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="210" width="180" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="note3arrow" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="note3">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="760" y="217" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="note4" value="🔴 Red = opened&#xa;🟢 Green = closed&#xa;Time only (day in strip)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="280" width="160" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="note4arrow" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;" edge="1" parent="1" source="note4">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="416" y="300" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+
+                <mxCell id="note5" value="Pull to refresh ↓&#xa;Real-time WS updates&#xa;(today only)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="390" width="150" height="60" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="note6" value="Timezone-safe: client sends&#xa;dateStart/dateEnd as UTC ISO&#xa;strings → accurate local-day&#xa;filtering on the server." style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="470" width="200" height="64" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="note7" value="Empty state:&#xa;📭 &quot;No activity&#xa;     on this day&quot;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="550" width="120" height="60" as="geometry"/>
+                </mxCell>
+
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

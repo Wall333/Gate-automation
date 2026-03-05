@@ -1,0 +1,147 @@
+<mxfile host="65bd71144e">
+    <diagram id="notif-prefs" name="Notification Preferences — v1.5.0">
+        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <!-- Phone frame -->
+                <mxCell id="phone" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#F5F5F5;strokeColor=#333333;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="20" width="360" height="740" as="geometry"/>
+                </mxCell>
+                <mxCell id="sb" value="9:41 AM" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=#E8E8E8;fontSize=11;fontColor=#333;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="20" width="360" height="24" as="geometry"/>
+                </mxCell>
+                <!-- Header -->
+                <mxCell id="header" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDDDDD;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="44" width="360" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="backBtn" value="‹ Activity" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=15;fontColor=#4285F4;" vertex="1" parent="1">
+                    <mxGeometry x="410" y="50" width="100" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="headerTitle" value="Notifications" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=17;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="500" y="48" width="160" height="36" as="geometry"/>
+                </mxCell>
+
+                <!-- Section header -->
+                <mxCell id="secHeader" value="NOTIFY ME WHEN…" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;fontColor=#888888;letterSpacing=0.5;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="100" width="200" height="24" as="geometry"/>
+                </mxCell>
+
+                <!-- Row 1: Gate opens -->
+                <mxCell id="row1bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="130" width="360" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="row1t" value="Gate opens" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="134" width="200" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="row1s" value="Get a notification whenever the gate is opened" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=13;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="158" width="280" height="20" as="geometry"/>
+                </mxCell>
+                <!-- Toggle ON -->
+                <mxCell id="tog1track" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#4285F4;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="706" y="146" width="40" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="tog1thumb" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="726" y="148" width="18" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="div1" value="" style="line;strokeWidth=0.5;strokeColor=#E0E0E0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="194" width="328" height="1" as="geometry"/>
+                </mxCell>
+
+                <!-- Row 2: Gate closes -->
+                <mxCell id="row2bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="196" width="360" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="row2t" value="Gate closes" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="200" width="200" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="row2s" value="Get a notification whenever the gate is closed" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=13;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="224" width="280" height="20" as="geometry"/>
+                </mxCell>
+                <!-- Toggle OFF -->
+                <mxCell id="tog2track" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#E0E0E0;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="706" y="212" width="40" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="tog2thumb" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="708" y="214" width="18" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="div2" value="" style="line;strokeWidth=0.5;strokeColor=#E0E0E0;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="260" width="328" height="1" as="geometry"/>
+                </mxCell>
+
+                <!-- Row 3: Gate open too long -->
+                <mxCell id="row3bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="262" width="360" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="row3t" value="Gate open too long" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#1A1A1A;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="266" width="260" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="row3s" value="Alert if the gate stays open longer than a set time" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=13;fontColor=#888888;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="290" width="280" height="20" as="geometry"/>
+                </mxCell>
+                <!-- Toggle ON -->
+                <mxCell id="tog3track" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#4285F4;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="706" y="278" width="40" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="tog3thumb" value="" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="726" y="280" width="18" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- Duration picker (expanded) -->
+                <mxCell id="durBg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="330" width="360" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="durLabel" value="Alert after:" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=14;fontColor=#555555;" vertex="1" parent="1">
+                    <mxGeometry x="416" y="336" width="80" height="24" as="geometry"/>
+                </mxCell>
+                <!-- Chips -->
+                <mxCell id="ch1" value="1m" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ECECEC;strokeColor=none;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+                    <mxGeometry x="500" y="338" width="36" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch2" value="2m" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ECECEC;strokeColor=none;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+                    <mxGeometry x="542" y="338" width="36" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch3" value="5m" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#4285F4;strokeColor=none;fontSize=13;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+                    <mxGeometry x="584" y="338" width="36" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch4" value="10m" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ECECEC;strokeColor=none;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+                    <mxGeometry x="626" y="338" width="36" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch5" value="15m" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ECECEC;strokeColor=none;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+                    <mxGeometry x="668" y="338" width="36" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch6" value="30m" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#ECECEC;strokeColor=none;fontSize=13;fontColor=#555555;" vertex="1" parent="1">
+                    <mxGeometry x="710" y="338" width="36" height="28" as="geometry"/>
+                </mxCell>
+
+                <!-- Note -->
+                <mxCell id="note" value="Notifications are sent as push alerts.&#xa;Make sure notifications are enabled&#xa;in your phone's Settings." style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=13;fontColor=#AAAAAA;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="420" width="300" height="50" as="geometry"/>
+                </mxCell>
+
+                <!-- Annotations -->
+                <mxCell id="a1" value="Blue toggle = ON&#xa;Grey toggle = OFF" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="150" width="130" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="a1a" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;" edge="1" parent="1" source="a1">
+                    <mxGeometry relative="1" as="geometry"><mxPoint x="746" y="157" as="targetPoint"/></mxGeometry>
+                </mxCell>
+                <mxCell id="a2" value="Duration chips shown&#xa;only when toggle is ON" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="340" width="160" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="a2a" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;" edge="1" parent="1" source="a2">
+                    <mxGeometry relative="1" as="geometry"><mxPoint x="746" y="352" as="targetPoint"/></mxGeometry>
+                </mxCell>
+                <mxCell id="a3" value="Blue chip = selected&#xa;(5 min in this example)" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="340" width="160" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="a3a" value="" style="endArrow=classic;html=1;strokeColor=#4285F4;" edge="1" parent="1" source="a3">
+                    <mxGeometry relative="1" as="geometry"><mxPoint x="400" y="352" as="targetPoint"/></mxGeometry>
+                </mxCell>
+                <mxCell id="a4" value="Accessed via 🔔 bell&#xa;icon on Activity tab" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#4285F4;fontStyle=2;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="50" width="150" height="36" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

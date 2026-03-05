@@ -1,6 +1,6 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.5.5  
+> **Current version:** v1.5.6  
 > **Last updated:** March 5, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.
@@ -110,6 +110,7 @@ The gate automatically opens when your phone gets close to home. Uses your phone
 | v1.5 | Notifications & activity feed | Done |
 | v1.5.4 | HTTPS everywhere (Caddy, WSS, DuckDNS) | Done |
 | v1.5.5 | Firmware version tracking & smart OTA | Done |
+| v1.5.6 | Activity feed date strip redesign | Done |
 | v1.6 | Guest access & dark mode | Planned |
 | v1.7 | Auto-close timer | Planned |
 | v2.0 | Roles, schedules, multi-gate | Planned |

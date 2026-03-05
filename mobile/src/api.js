@@ -256,11 +256,14 @@ export async function triggerOTA(deviceId, firmwareId) {
 
 // ── Activity Feed API ────────────────────────────────────────────────
 
-export async function getGateEvents({ limit = 50, deviceId, before } = {}) {
+export async function getGateEvents({ limit = 200, deviceId, before, date, dateStart, dateEnd } = {}) {
   const params = new URLSearchParams();
   if (limit) params.set('limit', String(limit));
   if (deviceId) params.set('deviceId', deviceId);
   if (before) params.set('before', before);
+  if (date) params.set('date', date);
+  if (dateStart) params.set('dateStart', dateStart);
+  if (dateEnd) params.set('dateEnd', dateEnd);
   const query = params.toString();
   const res = await authFetch(`/gate/events${query ? `?${query}` : ''}`);
   if (!res.ok) throw new Error('Failed to fetch gate events');
