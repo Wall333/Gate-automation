@@ -187,11 +187,10 @@ router.post(
       }
 
       // Build the download URL the Arduino will use.
-      // The Arduino downloads directly from the Node server, not through
-      // Caddy. Use plain HTTP on port 3000 with the server's IP address.
-      // Using IP instead of hostname avoids DNS issues in the OTA library.
-      const SERVER_OTA_HOST = process.env.OTA_HOST || '34.187.154.174:3000';
-      const firmwareUrl = `http://${SERVER_OTA_HOST}/firmware/download/${firmware.storedName}`;
+      // After USB flash, Arduino uses WiFiSSLClient so OTA downloads go
+      // through Caddy (HTTPS on port 443), same as all other traffic.
+      const serverHost = req.headers.host || `${req.hostname}:${req.socket.localPort}`;
+      const firmwareUrl = `https://${serverHost}/firmware/download/${firmware.storedName}`;
 
       // Send OTA_UPDATE command to the device
       sendOTAUpdate(id, firmwareUrl);
