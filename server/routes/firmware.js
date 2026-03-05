@@ -186,10 +186,12 @@ router.post(
         return res.status(404).json({ error: 'Firmware not found.' });
       }
 
-      // Build the download URL the Arduino will use
-      const serverHost = req.headers.host || `${req.hostname}:${req.socket.localPort}`;
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-      const firmwareUrl = `${protocol}://${serverHost}/firmware/download/${firmware.storedName}`;
+      // Build the download URL the Arduino will use.
+      // The Arduino downloads directly from the Node server, not through
+      // Caddy. Use plain HTTP on port 3000 with the server's public IP/hostname.
+      // Once the Arduino has WSS firmware, future OTAs can use HTTPS through Caddy.
+      const SERVER_OTA_HOST = process.env.OTA_HOST || 'gatecontroller.duckdns.org:3000';
+      const firmwareUrl = `http://${SERVER_OTA_HOST}/firmware/download/${firmware.storedName}`;
 
       // Send OTA_UPDATE command to the device
       sendOTAUpdate(id, firmwareUrl);

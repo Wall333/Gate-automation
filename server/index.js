@@ -8,6 +8,9 @@ const { initDeviceWebSocket, initAppWebSocket, recoverOpenTooLongTimers } = requ
 const app = express();
 const server = http.createServer(app);
 
+// ── Reverse proxy trust (Caddy sends X-Forwarded-For) ────
+app.set('trust proxy', 1);
+
 // ── Middleware ────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
