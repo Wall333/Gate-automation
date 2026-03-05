@@ -127,7 +127,7 @@ sudo ufw allow 3000
 sudo ufw enable
 ```
 
-> **Note**: Port 3000 must remain open while the Arduino connects directly via `ws://IP:3000`. Once the Arduino firmware is updated to use `wss://gatecontroller.duckdns.org`, port 3000 can be closed.
+> **Note**: Port 3000 should be closed once the Arduino is flashed with WSS firmware (v1.5.4+) and confirmed working through Caddy on port 443. Delete the `allow-node-3000` GCP firewall rule and run `sudo ufw delete allow 3000` on the VM.
 
 ### Step 9: Install Caddy (HTTPS Reverse Proxy)
 
@@ -170,16 +170,15 @@ chmod +x ~/duckdns/duck.sh
 ### Step 10: Verify
 
 ```bash
+# Locally on the VM:
 curl http://localhost:3000/health
 # Expected: {"status":"ok","timestamp":"..."}
+
+# From any browser or phone (via Caddy HTTPS):
+curl https://gatecontroller.duckdns.org/health
 ```
 
-From any browser or phone:
-```
-http://<YOUR_VM_EXTERNAL_IP>:3000/health
-```
-
-### Step 10: Update Mobile App Config
+### Step 11: Update Mobile App Config
 
 Update `mobile/src/config.js`:
 ```js
@@ -206,7 +205,7 @@ To also allow port 3000 (for testing before reverse proxy):
 ## Future Steps
 
 - [x] Set up Caddy reverse proxy for HTTPS (Let's Encrypt)
-- [ ] Close port 3000 after Arduino OTA to WSS is confirmed working
+- [ ] Close port 3000 after Arduino WSS is confirmed working (delete `allow-node-3000` firewall rule)
 - [x] Add a domain name — `gatecontroller.duckdns.org` (DuckDNS, free)
 - [ ] Remove `usesCleartextTraffic: true` from `app.json` (kept for Arduino local AP provisioning)
 - [ ] Set up daily database backups (cron job)

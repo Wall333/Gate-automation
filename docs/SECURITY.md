@@ -159,7 +159,7 @@ Use this checklist before going to production:
 - [ ] **Strong JWT_SECRET** — at least 32 random characters
 - [ ] **Per-device tokens** — generated automatically via admin API (no manual shared secret)
 - [ ] **Firewall rules** — only ports 22 (SSH), 80, 443 open on the cloud VM
-- [ ] **Port 3000 closed** — server only accessible via reverse proxy (close after Arduino OTA to WSS)
+- [ ] **Port 3000 closed** — server only accessible via reverse proxy (close after Arduino WSS confirmed working)
 - [ ] **SSH key auth** — disable password SSH login on the cloud VM
 - [ ] **`.env` not in git** — verified in `.gitignore`
 - [ ] **`google-services.json` not in git** — Firebase config excluded via `.gitignore`
@@ -214,11 +214,11 @@ When deploying on Google Cloud Platform (GCP) Always Free tier:
 
 | Priority | Improvement | Description |
 |----------|------------|-------------|
-| High | HTTPS everywhere | TLS via Let's Encrypt + Caddy/Nginx |
+| ~~High~~ | ~~HTTPS everywhere~~ | ✅ **Implemented** (v1.5.4) — Caddy reverse proxy with Let's Encrypt on `gatecontroller.duckdns.org` |
 | High | Helmet middleware | HTTP security headers |
 | Medium | Token refresh | Short-lived access tokens + refresh tokens |
-| ~~Medium~~ | ~~Per-device keys~~ | ✅ **Implemented** — Each device gets a unique auto-generated token via `POST /admin/devices` |
-| Medium | WebSocket TLS | WSS instead of WS for Arduino ↔ Server |
+| ~~Medium~~ | ~~Per-device keys~~ | ✅ **Implemented** (v1.1) — Each device gets a unique auto-generated token via `POST /admin/devices` |
+| ~~Medium~~ | ~~WebSocket TLS~~ | ✅ **Implemented** (v1.5.4) — Arduino uses `WiFiSSLClient` for WSS through Caddy on port 443 |
 | Low | EEPROM encryption | Encrypt credentials stored on Arduino |
 | Low | 2FA | Optional two-factor auth for admin actions |
 | Low | IP allowlisting | Restrict admin endpoints to known IPs |

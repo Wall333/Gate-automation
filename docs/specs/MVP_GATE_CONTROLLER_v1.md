@@ -114,7 +114,7 @@ Arduino                           Server                          App
   │    isOpen: true/false }         │── broadcast GATE_STATE ──────►│
   │                                 │                               │
   │◄── { type: "OTA_UPDATE",  ────│  (admin triggers firmware push)│
-  │    url: "http://..." }          │                               │
+  │    url: "https://..." }         │                               │
   │── { type: "OTA_STATUS",  ─────►│  (progress: downloading,      │
   │    status, message }            │   verifying, applying, error) │
   │                                 │── broadcast OTA_STATUS ──────►│

@@ -146,7 +146,7 @@ router.delete('/admin/firmware/:id', authenticate, requireAdmin, async (req, res
 });
 
 // ── GET /firmware/download/:storedName — Serve firmware ──
-// No auth — the Arduino needs to download this directly via HTTP
+// No auth — the Arduino downloads this directly via HTTPS through Caddy
 router.get('/firmware/download/:storedName', (req, res) => {
   const filePath = path.join(FIRMWARE_DIR, req.params.storedName);
   if (!fs.existsSync(filePath)) {

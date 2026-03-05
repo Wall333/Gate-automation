@@ -10,10 +10,16 @@ All notable changes to the Gate Controller project are documented here.
 - **Firmware version tracking** — Arduino now reports its firmware version (`FIRMWARE_VERSION`) to the server on every WebSocket connect. Version is stored in the Device record and visible in the app.
 - **Latest firmware endpoint** — Server exposes `GET /admin/firmware/latest` so the app can check what version is available.
 - **Smart firmware update UI** — Device Settings now shows "Device Version" vs "Latest Available" with colour-coded status. If an update is available, a single "Update to vX.Y.Z" button triggers OTA. No more browsing firmware lists or per-file push buttons.
+- **OTA download retries** — Arduino OTA now retries the firmware download up to 3 times (with 3-second delays) before giving up. Transient network errors no longer require a USB reflash.
+- **OTA error codes** — All OTA error statuses now include the library error code (e.g. "Download failed after 3 attempts (err -7)") for easier debugging.
 
 ### Changed
 - **Device model** — Added `firmwareVersion` field (Prisma migration `add-device-firmware-version`).
 - **Device API responses** — `GET /gate/status` and `GET /admin/devices` now include `firmwareVersion`.
+- **OTA download URL** — Always uses HTTPS through Caddy (`https://gatecontroller.duckdns.org/firmware/download/...`). The `OTAUpdate` library on UNO R4 WiFi natively supports HTTPS.
+
+### Fixed
+- **Express `trust proxy`** — Added `app.set('trust proxy', 1)` so `express-rate-limit` correctly reads `X-Forwarded-For` from Caddy instead of erroring on the proxy header.
 
 ---
 
