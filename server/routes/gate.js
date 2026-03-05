@@ -70,6 +70,7 @@ router.get('/status', async (_req, res) => {
         name: true,
         isOnline: true,
         isOpen: true,
+        firmwareVersion: true,
         lastSeen: true,
       },
     });

@@ -69,14 +69,19 @@ function initDeviceWebSocket(httpServer) {
           // Register connection
           connectedDevices.set(device.id, ws);
 
-          // Mark device online
+          // Mark device online + store firmware version if reported
+          const updateData = { isOnline: true, lastSeen: new Date() };
+          if (msg.firmwareVersion) {
+            updateData.firmwareVersion = String(msg.firmwareVersion);
+          }
           await prisma.device.update({
             where: { id: device.id },
-            data: { isOnline: true, lastSeen: new Date() },
+            data: updateData,
           });
 
           ws.send(JSON.stringify({ type: 'AUTHENTICATED', deviceId: device.id }));
-          console.log(`[ws] Device "${device.name}" (${device.id}) connected`);
+          const fwTag = msg.firmwareVersion ? ` (fw ${msg.firmwareVersion})` : '';
+          console.log(`[ws] Device "${device.name}" (${device.id}) connected${fwTag}`);
 
           // Start offline check timer
           heartbeatTimer = startHeartbeatMonitor(device.id, ws);

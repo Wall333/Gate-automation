@@ -1,6 +1,6 @@
 # Gate Controller
 
-> **Current version:** v1.5.4
+> **Current version:** v1.5.5
 
 A secure gate controller system that lets authorized users open a gate remotely from their phone.
 

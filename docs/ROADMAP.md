@@ -1,6 +1,6 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.5.4  
+> **Current version:** v1.5.5  
 > **Last updated:** March 3, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.

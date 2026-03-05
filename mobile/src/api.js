@@ -228,6 +228,13 @@ export async function getFirmwareList() {
   return await res.json();
 }
 
+export async function getLatestFirmware() {
+  const res = await authFetch('/admin/firmware/latest');
+  if (res.status === 404) return null; // no firmware uploaded
+  if (!res.ok) throw new Error('Failed to fetch latest firmware');
+  return await res.json();
+}
+
 export async function deleteFirmware(firmwareId) {
   const res = await authFetch(`/admin/firmware/${firmwareId}`, {
     method: 'DELETE',

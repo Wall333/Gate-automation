@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { deleteDevice, updateDevice, uploadFirmware, getFirmwareList, triggerOTA } from '../api';
+import { deleteDevice, updateDevice, uploadFirmware, getLatestFirmware, triggerOTA } from '../api';
 import { useAuth } from '../AuthContext';
 import useGateStateSocket from '../hooks/useGateStateSocket';
 import Config from '../config';
@@ -88,7 +88,7 @@ export default function DeviceSettingsScreen() {
   }
 
   // ── Firmware update state ───────────────────────────
-  const [firmwareList, setFirmwareList] = useState([]);
+  const [latestFirmware, setLatestFirmware] = useState(null);
   const [loadingFirmware, setLoadingFirmware] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [triggeringOta, setTriggeringOta] = useState(false);
@@ -101,21 +101,26 @@ export default function DeviceSettingsScreen() {
     }
   }, [device.id]));
 
-  const loadFirmwareList = useCallback(async () => {
+  const loadLatestFirmware = useCallback(async () => {
     setLoadingFirmware(true);
     try {
-      const list = await getFirmwareList();
-      setFirmwareList(list);
+      const fw = await getLatestFirmware();
+      setLatestFirmware(fw);
     } catch (err) {
-      console.warn('Failed to load firmware list:', err.message);
+      console.warn('Failed to load latest firmware:', err.message);
     } finally {
       setLoadingFirmware(false);
     }
   }, []);
 
   useEffect(() => {
-    if (isAdmin) loadFirmwareList();
-  }, [isAdmin, loadFirmwareList]);
+    if (isAdmin) loadLatestFirmware();
+  }, [isAdmin, loadLatestFirmware]);
+
+  // Check if an update is available
+  const deviceFwVersion = device.firmwareVersion || '';
+  const latestFwVersion = latestFirmware?.version || '';
+  const updateAvailable = latestFirmware && latestFwVersion && deviceFwVersion !== latestFwVersion;
 
   async function handleUploadFirmware() {
     try {
@@ -150,7 +155,7 @@ export default function DeviceSettingsScreen() {
     try {
       await uploadFirmware(file.uri, file.name, version);
       Alert.alert('Success', `Firmware "${file.name}" uploaded.`);
-      await loadFirmwareList();
+      await loadLatestFirmware();
     } catch (err) {
       Alert.alert('Upload Failed', err.message);
     } finally {
@@ -261,7 +266,7 @@ export default function DeviceSettingsScreen() {
         <View style={styles.card}>
           <InfoRow label="Server Host" value={serverHost} mono />
           <InfoRow label="Server Port" value={serverPort} />
-          <InfoRow label="Protocol" value="WebSocket (ws://)" />
+          <InfoRow label="Protocol" value="WebSocket (wss://)" />
           <InfoRow label="Endpoint" value="/device/ws" mono />
           <Text style={styles.cardNote}>
             Server connection is set during provisioning. To change it,
@@ -286,8 +291,27 @@ export default function DeviceSettingsScreen() {
       {/* Firmware Update (admin only) */}
       {isAdmin && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Firmware Update</Text>
+          <Text style={styles.sectionTitle}>Firmware</Text>
           <View style={styles.card}>
+            {/* Current + Latest version info */}
+            <InfoRow
+              label="Device Version"
+              value={deviceFwVersion || 'Unknown'}
+              mono
+            />
+            {loadingFirmware ? (
+              <ActivityIndicator size="small" style={{ marginVertical: 8 }} />
+            ) : latestFirmware ? (
+              <InfoRow
+                label="Latest Available"
+                value={latestFwVersion || 'No version'}
+                mono
+                valueColor={updateAvailable ? '#FF9500' : '#34C759'}
+              />
+            ) : (
+              <Text style={styles.cardNote}>No firmware uploaded to server yet.</Text>
+            )}
+
             {/* OTA Status Banner */}
             {otaStatus && (
               <View style={[
@@ -311,7 +335,32 @@ export default function DeviceSettingsScreen() {
               </View>
             )}
 
-            {/* Upload Button */}
+            {/* Update Firmware Button — shown when update is available */}
+            {updateAvailable && !otaStatus && (
+              <TouchableOpacity
+                style={[
+                  styles.updateButton,
+                  (!device.isOnline || triggeringOta) && styles.pushButtonDisabled,
+                ]}
+                onPress={() => handleTriggerOTA(latestFirmware)}
+                disabled={!device.isOnline || triggeringOta}
+              >
+                {triggeringOta ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.updateButtonText}>
+                    Update to {latestFwVersion}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {/* Up to date message */}
+            {latestFirmware && !updateAvailable && !otaStatus && (
+              <Text style={styles.upToDate}>Firmware is up to date.</Text>
+            )}
+
+            {/* Upload new firmware button */}
             <TouchableOpacity
               style={styles.uploadButton}
               onPress={handleUploadFirmware}
@@ -320,46 +369,9 @@ export default function DeviceSettingsScreen() {
               {uploading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.uploadButtonText}>Upload Firmware (.bin / .ota)</Text>
+                <Text style={styles.uploadButtonText}>Upload New Firmware (.bin / .ota)</Text>
               )}
             </TouchableOpacity>
-
-            {/* Firmware List */}
-            {loadingFirmware ? (
-              <ActivityIndicator size="small" style={{ marginTop: 12 }} />
-            ) : firmwareList.length === 0 ? (
-              <Text style={styles.cardNote}>No firmware files uploaded yet.</Text>
-            ) : (
-              firmwareList.map((fw) => (
-                <View key={fw.id} style={styles.fwRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.fwName} numberOfLines={1}>
-                      {fw.filename}
-                    </Text>
-                    <Text style={styles.fwMeta}>
-                      {fw.version ? `${fw.version} · ` : ''}
-                      {(fw.size / 1024).toFixed(0)} KB ·{' '}
-                      {new Date(fw.uploadedAt).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.pushButton,
-                      (!device.isOnline || triggeringOta) && styles.pushButtonDisabled,
-                    ]}
-                    onPress={() => handleTriggerOTA(fw)}
-                    disabled={!device.isOnline || triggeringOta}
-                  >
-                    <Text style={styles.pushButtonText}>Push</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
-            )}
-
-            <Text style={styles.cardNote}>
-              Upload a compiled .bin or .ota file, then tap "Push" to send it
-              to the device over WiFi. The device will reboot after updating.
-            </Text>
           </View>
         </View>
       )}
@@ -553,47 +565,38 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 8,
   },
+  updateButton: {
+    backgroundColor: '#FF9500',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  updateButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  upToDate: {
+    fontSize: 14,
+    color: '#34C759',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginVertical: 10,
+  },
   uploadButton: {
     backgroundColor: '#007AFF',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    marginTop: 4,
   },
   uploadButtonText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#fff',
   },
-  fwRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#f0f0f0',
-  },
-  fwName: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1a1a1a',
-  },
-  fwMeta: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  pushButton: {
-    backgroundColor: '#34C759',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    marginLeft: 12,
-  },
   pushButtonDisabled: {
     backgroundColor: '#ccc',
-  },
-  pushButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
   },
 });

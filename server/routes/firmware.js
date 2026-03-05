@@ -100,6 +100,29 @@ router.get('/admin/firmware', authenticate, requireAdmin, async (_req, res) => {
   }
 });
 
+// ── GET /admin/firmware/latest — Get the latest uploaded firmware ─
+router.get('/admin/firmware/latest', authenticate, async (_req, res) => {
+  try {
+    const latest = await prisma.firmware.findFirst({
+      select: {
+        id: true,
+        filename: true,
+        version: true,
+        size: true,
+        uploadedAt: true,
+      },
+      orderBy: { uploadedAt: 'desc' },
+    });
+    if (!latest) {
+      return res.status(404).json({ error: 'No firmware uploaded.' });
+    }
+    return res.json(latest);
+  } catch (err) {
+    console.error('[firmware] Latest error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // ── DELETE /admin/firmware/:id — Remove firmware (admin) ─
 router.delete('/admin/firmware/:id', authenticate, requireAdmin, async (req, res) => {
   try {

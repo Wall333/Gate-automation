@@ -28,13 +28,14 @@ model User {
 
 // ── Devices ──────────────────────────────────────────────
 model Device {
-  id        String   @id @default(uuid())
-  name      String
-  tokenHash String
-  isOnline  Boolean  @default(false)
-  isOpen    Boolean  @default(false)
-  lastSeen  DateTime?
-  createdAt DateTime @default(now())
+  id              String   @id @default(uuid())
+  name            String
+  tokenHash       String
+  isOnline        Boolean  @default(false)
+  isOpen          Boolean  @default(false)
+  firmwareVersion String   @default("")
+  lastSeen        DateTime?
+  createdAt       DateTime @default(now())
 
   auditLogs  AuditLog[]
   gateEvents GateEvent[]

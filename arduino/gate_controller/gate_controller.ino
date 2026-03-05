@@ -28,6 +28,9 @@
 #include "config.h"
 #include "provisioning.h"
 
+// ── Firmware version (sent to server on connect) ─────────────────────
+#define FIRMWARE_VERSION  "1.5.4"
+
 // ── Factory reset pin ────────────────────────────────────────────────
 #define RESET_PIN  3   // Hold LOW during boot to factory-reset
 
@@ -294,8 +297,9 @@ void sendAuth() {
   DeviceConfig& cfg = getConfig();
 
   JsonDocument doc;
-  doc["type"]  = "AUTH";
-  doc["token"] = cfg.deviceToken;
+  doc["type"]            = "AUTH";
+  doc["token"]           = cfg.deviceToken;
+  doc["firmwareVersion"] = FIRMWARE_VERSION;
 
   String payload;
   serializeJson(doc, payload);
@@ -304,7 +308,7 @@ void sendAuth() {
   wsClient->print(payload);
   wsClient->endMessage();
 
-  Serial.println(F("[ws] AUTH sent"));
+  Serial.println(F("[ws] AUTH sent (fw " FIRMWARE_VERSION ")"));
 }
 
 // ─────────────────────────────────────────────────────────────────────
