@@ -188,9 +188,9 @@ router.post(
 
       // Build the download URL the Arduino will use.
       // The Arduino downloads directly from the Node server, not through
-      // Caddy. Use plain HTTP on port 3000 with the server's public IP/hostname.
-      // Once the Arduino has WSS firmware, future OTAs can use HTTPS through Caddy.
-      const SERVER_OTA_HOST = process.env.OTA_HOST || 'gatecontroller.duckdns.org:3000';
+      // Caddy. Use plain HTTP on port 3000 with the server's IP address.
+      // Using IP instead of hostname avoids DNS issues in the OTA library.
+      const SERVER_OTA_HOST = process.env.OTA_HOST || '34.187.154.174:3000';
       const firmwareUrl = `http://${SERVER_OTA_HOST}/firmware/download/${firmware.storedName}`;
 
       // Send OTA_UPDATE command to the device
