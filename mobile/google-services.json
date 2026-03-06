@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "993279981060-32397kmo74t1h1g07k0mnc8nbrt6o50d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wall333.gatecontroller",
+            "certificate_hash": "449ea11f93d60f5a43e4c1b13ba8df5401d16621"
+          }
+        },
+        {
           "client_id": "993279981060-e3i9nn4f40et8fjah8k9na76tjahqd3q.apps.googleusercontent.com",
           "client_type": 3
         }
