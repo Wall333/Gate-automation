@@ -6,7 +6,7 @@ const Config = {
   SERVER_URL: 'https://gatecontroller.duckdns.org',
 
   // Google OAuth Client ID (must match server's GOOGLE_CLIENT_ID)
-  GOOGLE_CLIENT_ID: '993279981060-32397kmo74t1h1g07k0mnc8nbrt6o50d.apps.googleusercontent.com',
+  GOOGLE_CLIENT_ID: '993279981060-e3i9nn4f40et8fjah8k9na76tjahqd3q.apps.googleusercontent.com',
 
   // Arduino provisioning AP defaults
   ARDUINO_AP_IP: '192.168.4.1',       // Default AP IP for Arduino
