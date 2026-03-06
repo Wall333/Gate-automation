@@ -4,6 +4,20 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.8] — 2026-03-06
+
+### Fixed
+- **Google Sign-In consolidated to Firebase project** — Migrated all OAuth credentials from old GCP project (`379448644977`) to the Firebase project (`993279981060` / `gate-controller-b7eee`). Created new Web and Android OAuth clients in the correct project.
+- **`google-services.json` updated** — Now contains populated `oauth_client` array with the correct Web client (`993279981060-e3i9nn4f40et8fjah8k9na76tjahqd3q`). Previously had empty `oauth_client: []` causing "Developer Error" on sign-in.
+- **Mobile `GOOGLE_CLIENT_ID` updated** — `mobile/src/config.js` now references the Web Client ID from the Firebase project instead of the old GCP project.
+- **Server `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` updated** — `server/.env` credentials now match the Firebase project's Web OAuth client, fixing server-side token verification.
+
+### Changed
+- **EAS build configuration** — Added `googleServicesFile` to `app.json` and removed `**/google-services.json` from root `.gitignore` so EAS cloud builds include the Firebase config. Local `android/` directory is no longer committed; EAS runs a clean `expo prebuild`.
+- **SHA-1 fingerprint registered** — EAS signing key SHA-1 (`44:9E:A1:…:66:21`) registered in Firebase for Android OAuth.
+
+---
+
 ## [v1.5.7] — 2026-03-06
 
 ### Added
