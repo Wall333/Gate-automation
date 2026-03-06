@@ -4,6 +4,19 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.7] — 2026-03-06
+
+### Added
+- **Firmware visible to all users** — Non-admin users can now see current device firmware version, latest available version, and trigger OTA updates from Device Settings. Upload is still admin-only.
+- **User OTA endpoint** — New `POST /gate/devices/:id/ota` lets any authenticated user trigger firmware updates, with audit logging.
+- **User firmware endpoint** — New `GET /gate/firmware/latest` accessible to all authenticated users (previously only admin could reach `/admin/firmware/latest`).
+
+### Changed
+- **Device Settings privacy** — Non-admin users no longer see Server Connection (host, port, endpoint), Network (AP name, password), device name editing, or Remove Device. Only device info and firmware remain.
+- **EAS build fix** — Use `get('versionCode')` instead of `.versionCode` in `build.gradle` to fix Gradle 8.14+ Groovy `LazyMap` method dispatch error on EAS cloud builds.
+
+---
+
 ## [v1.5.6] — 2026-03-05
 
 ### Changed

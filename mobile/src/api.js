@@ -229,7 +229,7 @@ export async function getFirmwareList() {
 }
 
 export async function getLatestFirmware() {
-  const res = await authFetch('/admin/firmware/latest');
+  const res = await authFetch('/gate/firmware/latest');
   if (res.status === 404) return null; // no firmware uploaded
   if (!res.ok) throw new Error('Failed to fetch latest firmware');
   return await res.json();
@@ -246,6 +246,16 @@ export async function deleteFirmware(firmwareId) {
 
 export async function triggerOTA(deviceId, firmwareId) {
   const res = await authFetch(`/admin/devices/${deviceId}/ota`, {
+    method: 'POST',
+    body: JSON.stringify({ firmwareId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to trigger OTA update');
+  return data;
+}
+
+export async function triggerOTAUser(deviceId, firmwareId) {
+  const res = await authFetch(`/gate/devices/${deviceId}/ota`, {
     method: 'POST',
     body: JSON.stringify({ firmwareId }),
   });

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { deleteDevice, updateDevice, uploadFirmware, getLatestFirmware, triggerOTA } from '../api';
+import { deleteDevice, updateDevice, uploadFirmware, getLatestFirmware, triggerOTA, triggerOTAUser } from '../api';
 import { useAuth } from '../AuthContext';
 import useGateStateSocket from '../hooks/useGateStateSocket';
 import Config from '../config';
@@ -114,8 +114,8 @@ export default function DeviceSettingsScreen() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) loadLatestFirmware();
-  }, [isAdmin, loadLatestFirmware]);
+    loadLatestFirmware();
+  }, [loadLatestFirmware]);
 
   // Check if an update is available
   const deviceFwVersion = device.firmwareVersion || '';
@@ -180,7 +180,8 @@ export default function DeviceSettingsScreen() {
             setTriggeringOta(true);
             setOtaStatus({ status: 'triggering', message: 'Sending update command...' });
             try {
-              await triggerOTA(device.id, firmware.id);
+              const doOta = isAdmin ? triggerOTA : triggerOTAUser;
+              await doOta(device.id, firmware.id);
               setOtaStatus({ status: 'downloading', message: 'Device is downloading firmware...' });
             } catch (err) {
               setOtaStatus(null);
@@ -200,10 +201,10 @@ export default function DeviceSettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Device</Text>
         <View style={styles.card}>
-          {/* Editable Name */}
+          {/* Editable Name (admin only) */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Name</Text>
-            {editingName ? (
+            {isAdmin && editingName ? (
               <View style={styles.editRow}>
                 <TextInput
                   style={styles.editInput}
@@ -228,7 +229,7 @@ export default function DeviceSettingsScreen() {
                   </>
                 )}
               </View>
-            ) : (
+            ) : isAdmin ? (
               <TouchableOpacity
                 style={styles.editableValue}
                 onPress={() => setEditingName(true)}
@@ -236,6 +237,8 @@ export default function DeviceSettingsScreen() {
                 <Text style={styles.infoValue}>{name}</Text>
                 <Text style={styles.editIcon}>✎</Text>
               </TouchableOpacity>
+            ) : (
+              <Text style={[styles.infoValue, { flex: 1.5, textAlign: 'right' }]}>{name}</Text>
             )}
           </View>
 
@@ -260,107 +263,111 @@ export default function DeviceSettingsScreen() {
         </View>
       </View>
 
-      {/* Connection Info */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Server Connection</Text>
-        <View style={styles.card}>
-          <InfoRow label="Server Host" value={serverHost} mono />
-          <InfoRow label="Server Port" value={serverPort} />
-          <InfoRow label="Protocol" value="WebSocket (wss://)" />
-          <InfoRow label="Endpoint" value="/device/ws" mono />
-          <Text style={styles.cardNote}>
-            Server connection is set during provisioning. To change it,
-            factory-reset the device and re-provision via Add Device.
-          </Text>
-        </View>
-      </View>
-
-      {/* Network Info */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Network</Text>
-        <View style={styles.card}>
-          <InfoRow label="Provisioning AP" value="GateController" />
-          <InfoRow label="AP Password" value="gatesetup" />
-          <Text style={styles.cardNote}>
-            To change WiFi credentials, factory-reset the device (hold pin 3
-            LOW during boot) and re-provision via Add Device.
-          </Text>
-        </View>
-      </View>
-
-      {/* Firmware Update (admin only) */}
+      {/* Connection Info (admin only) */}
       {isAdmin && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Firmware</Text>
+          <Text style={styles.sectionTitle}>Server Connection</Text>
           <View style={styles.card}>
-            {/* Current + Latest version info */}
+            <InfoRow label="Server Host" value={serverHost} mono />
+            <InfoRow label="Server Port" value={serverPort} />
+            <InfoRow label="Protocol" value="WebSocket (wss://)" />
+            <InfoRow label="Endpoint" value="/device/ws" mono />
+            <Text style={styles.cardNote}>
+              Server connection is set during provisioning. To change it,
+              factory-reset the device and re-provision via Add Device.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Network Info (admin only) */}
+      {isAdmin && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Network</Text>
+          <View style={styles.card}>
+            <InfoRow label="Provisioning AP" value="GateController" />
+            <InfoRow label="AP Password" value="gatesetup" />
+            <Text style={styles.cardNote}>
+              To change WiFi credentials, factory-reset the device (hold pin 3
+              LOW during boot) and re-provision via Add Device.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Firmware Update */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Firmware</Text>
+        <View style={styles.card}>
+          {/* Current + Latest version info */}
+          <InfoRow
+            label="Device Version"
+            value={deviceFwVersion || 'Unknown'}
+            mono
+          />
+          {loadingFirmware ? (
+            <ActivityIndicator size="small" style={{ marginVertical: 8 }} />
+          ) : latestFirmware ? (
             <InfoRow
-              label="Device Version"
-              value={deviceFwVersion || 'Unknown'}
+              label="Latest Available"
+              value={latestFwVersion || 'No version'}
               mono
+              valueColor={updateAvailable ? '#FF9500' : '#34C759'}
             />
-            {loadingFirmware ? (
-              <ActivityIndicator size="small" style={{ marginVertical: 8 }} />
-            ) : latestFirmware ? (
-              <InfoRow
-                label="Latest Available"
-                value={latestFwVersion || 'No version'}
-                mono
-                valueColor={updateAvailable ? '#FF9500' : '#34C759'}
-              />
-            ) : (
-              <Text style={styles.cardNote}>No firmware uploaded to server yet.</Text>
-            )}
+          ) : (
+            <Text style={styles.cardNote}>No firmware uploaded to server yet.</Text>
+          )}
 
-            {/* OTA Status Banner */}
-            {otaStatus && (
-              <View style={[
-                styles.otaBanner,
-                otaStatus.status === 'error' && styles.otaBannerError,
-              ]}>
-                {otaStatus.status !== 'error' && (
-                  <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.otaBannerTitle}>
-                    {otaStatus.status === 'error' ? 'Update Failed' : 'Updating...'}
-                  </Text>
-                  <Text style={styles.otaBannerMsg}>{otaStatus.message}</Text>
-                </View>
-                {otaStatus.status === 'error' && (
-                  <TouchableOpacity onPress={() => setOtaStatus(null)}>
-                    <Text style={styles.otaDismiss}>Dismiss</Text>
-                  </TouchableOpacity>
-                )}
+          {/* OTA Status Banner */}
+          {otaStatus && (
+            <View style={[
+              styles.otaBanner,
+              otaStatus.status === 'error' && styles.otaBannerError,
+            ]}>
+              {otaStatus.status !== 'error' && (
+                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.otaBannerTitle}>
+                  {otaStatus.status === 'error' ? 'Update Failed' : 'Updating...'}
+                </Text>
+                <Text style={styles.otaBannerMsg}>{otaStatus.message}</Text>
               </View>
-            )}
+              {otaStatus.status === 'error' && (
+                <TouchableOpacity onPress={() => setOtaStatus(null)}>
+                  <Text style={styles.otaDismiss}>Dismiss</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
-            {/* Update Firmware Button — shown when update is available */}
-            {updateAvailable && !otaStatus && (
-              <TouchableOpacity
-                style={[
-                  styles.updateButton,
-                  (!device.isOnline || triggeringOta) && styles.pushButtonDisabled,
-                ]}
-                onPress={() => handleTriggerOTA(latestFirmware)}
-                disabled={!device.isOnline || triggeringOta}
-              >
-                {triggeringOta ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.updateButtonText}>
-                    Update to {latestFwVersion}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            )}
+          {/* Update Firmware Button — shown when update is available */}
+          {updateAvailable && !otaStatus && (
+            <TouchableOpacity
+              style={[
+                styles.updateButton,
+                (!device.isOnline || triggeringOta) && styles.pushButtonDisabled,
+              ]}
+              onPress={() => handleTriggerOTA(latestFirmware)}
+              disabled={!device.isOnline || triggeringOta}
+            >
+              {triggeringOta ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.updateButtonText}>
+                  Update to {latestFwVersion}
+                </Text>
+              )}
+            </TouchableOpacity>
+          )}
 
-            {/* Up to date message */}
-            {latestFirmware && !updateAvailable && !otaStatus && (
-              <Text style={styles.upToDate}>Firmware is up to date.</Text>
-            )}
+          {/* Up to date message */}
+          {latestFirmware && !updateAvailable && !otaStatus && (
+            <Text style={styles.upToDate}>Firmware is up to date.</Text>
+          )}
 
-            {/* Upload new firmware button */}
+          {/* Upload new firmware button (admin only) */}
+          {isAdmin && (
             <TouchableOpacity
               style={styles.uploadButton}
               onPress={handleUploadFirmware}
@@ -372,9 +379,9 @@ export default function DeviceSettingsScreen() {
                 <Text style={styles.uploadButtonText}>Upload New Firmware (.bin / .ota)</Text>
               )}
             </TouchableOpacity>
-          </View>
+          )}
         </View>
-      )}
+      </View>
 
       {/* Actions */}
       {isAdmin && (
