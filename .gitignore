@@ -29,7 +29,6 @@ coverage/
 # Android
 android/.gradle/
 android/app/build/
-**/google-services.json
 *firebase-adminsdk*
 
 # iOS
