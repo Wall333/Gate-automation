@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "993279981060",
+    "project_id": "gate-controller-b7eee",
+    "storage_bucket": "gate-controller-b7eee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:993279981060:android:93c35c75138e4206862751",
+        "android_client_info": {
+          "package_name": "com.wall333.gatecontroller"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnJuTmFx7HW7t-wbYdGxv_7rX6jZUbe8g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
