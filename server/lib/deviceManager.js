@@ -157,14 +157,22 @@ function initDeviceWebSocket(httpServer) {
       if (heartbeatTimer) clearInterval(heartbeatTimer);
 
       if (authenticatedDeviceId) {
-        connectedDevices.delete(authenticatedDeviceId);
-        try {
-          await prisma.device.update({
-            where: { id: authenticatedDeviceId },
-            data: { isOnline: false },
-          });
-        } catch { /* device may have been deleted */ }
-        console.log(`[ws] Device ${authenticatedDeviceId} disconnected`);
+        // A device can reconnect before the old socket finishes closing.
+        // Only clear the map/offline state if this closing socket is still
+        // the currently registered connection for the device.
+        const currentWs = connectedDevices.get(authenticatedDeviceId);
+        if (currentWs === ws) {
+          connectedDevices.delete(authenticatedDeviceId);
+          try {
+            await prisma.device.update({
+              where: { id: authenticatedDeviceId },
+              data: { isOnline: false },
+            });
+          } catch { /* device may have been deleted */ }
+          console.log(`[ws] Device ${authenticatedDeviceId} disconnected`);
+        } else {
+          console.log(`[ws] Device ${authenticatedDeviceId} closed stale socket`);
+        }
       }
     });
 
