@@ -16,7 +16,8 @@
 #define HEARTBEAT_INTERVAL_MS  30000    // Send heartbeat every 30 s
 #define RECONNECT_DELAY_MS     5000     // Wait before reconnecting after disconnect
 #define WIFI_RETRY_DELAY_MS    1000     // Delay between WiFi connection attempts
-#define WIFI_TIMEOUT_ATTEMPTS  30       // Max WiFi connect attempts before reset
+#define WIFI_TIMEOUT_ATTEMPTS  30       // Max WiFi connect attempts per connection cycle
+#define WIFI_PROVISION_FALLBACK_CYCLES  6 // After this many failed WiFi cycles, reopen provisioning AP
 
 // ── Provisioning AP ──────────────────────────────────────────────────
 #define AP_SSID       "GateController"  // AP name shown when device is unconfigured

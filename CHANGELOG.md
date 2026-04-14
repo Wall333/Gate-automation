@@ -4,6 +4,18 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.9] — 2026-04-14
+
+### Fixed
+- **False `DEVICE_OFFLINE` on toggle after reconnect** — The server now only removes a device from `connectedDevices` if the socket that closed is still the active socket for that device. This prevents a stale WebSocket `close` event from evicting a freshly reconnected Arduino and breaking toggle commands while live status updates continue.
+
+### Added
+- **Automatic provisioning fallback after repeated WiFi failures** — The firmware now counts failed WiFi connection cycles and reopens the `GateController` setup AP after several minutes of not reaching the saved network. This gives the device a recovery path after router or password changes without immediately requiring a physical factory reset.
+
+### Changed
+- **Device Settings recovery guidance** — The app now tells users that the device will automatically reopen its setup WiFi after repeated connection failures, with physical reset kept as the fallback option.
+- **Release metadata synchronized** — Mobile app version, Android `versionCode`, server package version, firmware version, README, and roadmap are now aligned to `v1.5.9` so the documented release state matches the shipped code.
+
 ## [v1.5.8] — 2026-03-06
 
 ### Fixed

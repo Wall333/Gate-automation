@@ -29,7 +29,7 @@
 #include "provisioning.h"
 
 // ── Firmware version (sent to server on connect) ─────────────────────
-#define FIRMWARE_VERSION  "1.5.4"
+#define FIRMWARE_VERSION  "1.5.9"
 
 // ── Factory reset pin ────────────────────────────────────────────────
 #define RESET_PIN  3   // Hold LOW during boot to factory-reset
@@ -91,6 +91,7 @@ unsigned long lastHeartbeat  = 0;
 unsigned long lastReconnect  = 0;
 bool          wsConnected    = false;
 bool          authenticated  = false;
+unsigned int  wifiFailCycles = 0;
 
 // ── OTA (Over-the-Air firmware update) ───────────────────────────────
 OTAUpdate     ota;
@@ -102,7 +103,7 @@ unsigned long lastDebounceTime   = 0;
 bool          lastRawReading     = false;
 
 // ── Forward declarations ─────────────────────────────────────────────
-void connectWiFi();
+bool connectWiFi();
 void connectWebSocket();
 void sendAuth();
 void sendHeartbeat();
@@ -113,6 +114,7 @@ void sendGateState(bool isOpen);
 void checkReedSwitch();
 void performOTA(const char* url);
 void sendOTAStatus(const char* status, const char* message);
+void enterProvisioningFallback(const char* reason);
 
 // ─────────────────────────────────────────────────────────────────────
 // setup()
@@ -171,8 +173,9 @@ void setup() {
     // Create WebSocket client with stored config
     wsClient = new WebSocketClient(wifiClient, cfg.serverHost, cfg.serverPort);
 
-    connectWiFi();
-    connectWebSocket();
+    if (connectWiFi()) {
+      connectWebSocket();
+    }
   } else {
     // ── Provisioning mode ────────────────
     Serial.println(F("[boot] No config — starting provisioning mode"));
@@ -200,9 +203,13 @@ void loop() {
       lastReconnect = now;
 
       if (WiFi.status() != WL_CONNECTED) {
-        connectWiFi();
+        if (!connectWiFi()) {
+          return;
+        }
       }
-      connectWebSocket();
+      if (!provisioning) {
+        connectWebSocket();
+      }
     }
     return;
   }
@@ -237,7 +244,7 @@ void loop() {
 // ─────────────────────────────────────────────────────────────────────
 // WiFi connection (uses EEPROM-stored credentials)
 // ─────────────────────────────────────────────────────────────────────
-void connectWiFi() {
+bool connectWiFi() {
   DeviceConfig& cfg = getConfig();
   Serial.print(F("[wifi] Connecting to "));
   Serial.println(cfg.ssid);
@@ -256,14 +263,47 @@ void connectWiFi() {
     attempts++;
 
     if (attempts >= WIFI_TIMEOUT_ATTEMPTS) {
-      Serial.println(F("\n[wifi] FAILED — restarting..."));
-      NVIC_SystemReset();
+      wifiFailCycles++;
+      Serial.println();
+      Serial.print(F("[wifi] FAILED — cycle "));
+      Serial.print(wifiFailCycles);
+      Serial.print(F("/"));
+      Serial.println(WIFI_PROVISION_FALLBACK_CYCLES);
+
+      if (wifiFailCycles >= WIFI_PROVISION_FALLBACK_CYCLES) {
+        enterProvisioningFallback("WiFi unavailable for too long");
+      }
+
+      return false;
     }
   }
 
+  wifiFailCycles = 0;
   Serial.println();
   Serial.print(F("[wifi] Connected — IP: "));
   Serial.println(WiFi.localIP());
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Enter provisioning AP after repeated WiFi failures.
+// This avoids requiring a physical factory reset when the router/SSID changes.
+// ─────────────────────────────────────────────────────────────────────
+void enterProvisioningFallback(const char* reason) {
+  Serial.print(F("[provision] Entering fallback provisioning mode: "));
+  Serial.println(reason);
+
+  provisioning = true;
+  wsConnected = false;
+  authenticated = false;
+  lastReconnect = millis();
+  matrix.loadFrame(sadFrame);
+
+  WiFi.disconnect();
+  WiFi.end();
+  delay(1000);
+
+  startProvisioning();
 }
 
 // ─────────────────────────────────────────────────────────────────────

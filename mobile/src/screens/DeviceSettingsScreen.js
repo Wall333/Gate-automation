@@ -288,8 +288,10 @@ export default function DeviceSettingsScreen() {
             <InfoRow label="Provisioning AP" value="GateController" />
             <InfoRow label="AP Password" value="gatesetup" />
             <Text style={styles.cardNote}>
-              To change WiFi credentials, factory-reset the device (hold pin 3
-              LOW during boot) and re-provision via Add Device.
+              To change WiFi credentials, re-provision via Add Device. If the
+              saved WiFi stops working for several minutes, the device will
+              automatically reopen its GateController setup WiFi. Physical
+              factory reset is still available as a fallback.
             </Text>
           </View>
         </View>
