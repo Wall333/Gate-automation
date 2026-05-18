@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const { sendNetworkUpdate, isDeviceConnected } = require('../lib/deviceManager');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -219,6 +220,55 @@ router.patch('/devices/:id', async (req, res) => {
     return res.json(device);
   } catch (err) {
     console.error('[admin/devices] update error:', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+const updateDeviceNetworkSchema = z.object({
+  ssid: z.string().trim().min(1).max(31),
+  password: z.string().min(1).max(63),
+});
+
+router.post('/devices/:id/network', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const parsed = updateDeviceNetworkSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+
+    const device = await prisma.device.findUnique({ where: { id } });
+    if (!device) {
+      return res.status(404).json({ error: 'Device not found.' });
+    }
+    if (!isDeviceConnected(id)) {
+      return res.status(409).json({ error: 'Device must be online to update WiFi credentials.' });
+    }
+
+    const result = await sendNetworkUpdate(id, parsed.data.ssid, parsed.data.password);
+
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.id,
+        deviceId: id,
+        action: 'NETWORK_UPDATE',
+        result: result.result,
+      },
+    });
+
+    if (!result.ok) {
+      const message = result.message || 'Device did not accept the WiFi update.';
+      const status = result.result === 'DEVICE_OFFLINE' ? 409 : 400;
+      return res.status(status).json({ error: message, result: result.result });
+    }
+
+    return res.json({
+      ok: true,
+      result: result.result,
+      message: result.message || 'WiFi credentials sent. Device will reboot and reconnect.',
+    });
+  } catch (err) {
+    console.error('[admin/devices/network] update error:', err);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });

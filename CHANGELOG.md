@@ -4,6 +4,19 @@ All notable changes to the Gate Controller project are documented here.
 
 ---
 
+## [v1.5.10] — 2026-05-19
+
+### Added
+- **Remote WiFi credential updates for online devices** — Admins can now edit a device's WiFi SSID and password directly from Device Settings while the device is online. The mobile app sends the new credentials to a dedicated admin API, which forwards a live `NETWORK_UPDATE` command to the Arduino.
+
+### Changed
+- **Firmware network update handler** — The Arduino now validates incoming WiFi credentials, saves them to EEPROM, sends a `NETWORK_UPDATE_ACK`, and reboots immediately to reconnect on the new network.
+- **Device Settings network section** — The previous read-only guidance is now an editable admin workflow with explicit reboot/recovery warnings.
+- **Release metadata synchronized** — Mobile app version, Android `versionCode`, server package version, firmware version, README, roadmap, and firmware release runbook are now aligned to `v1.5.10`.
+
+### Notes
+- **Firmware update required for remote WiFi edits** — The new admin WiFi edit action depends on firmware `v1.5.10` or newer. Older device firmware can still fall back to provisioning mode after repeated WiFi failures, but it cannot accept live WiFi updates from the server.
+
 ## [v1.5.9] — 2026-04-14
 
 ### Fixed

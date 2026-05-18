@@ -140,6 +140,19 @@ function initDeviceWebSocket(httpServer) {
         console.log(`[ota] Device ${authenticatedDeviceId}: ${msg.status} — ${msg.message}`);
         return;
       }
+      // ── NETWORK_UPDATE_ACK (response to WiFi update) ──
+      if (msg.type === 'NETWORK_UPDATE_ACK') {
+        const pending = pendingNetworkUpdates.get(authenticatedDeviceId);
+        if (pending) {
+          pending.resolve({
+            ok: msg.ok === true,
+            result: msg.ok === true ? 'ACK' : 'REJECTED',
+            message: msg.message ? String(msg.message) : '',
+          });
+          pendingNetworkUpdates.delete(authenticatedDeviceId);
+        }
+        return;
+      }
       // ── ACK (response to a TOGGLE we sent) ──────────
       if (msg.type === 'ACK') {
         // Resolve any pending toggle promise
@@ -216,6 +229,8 @@ function startHeartbeatMonitor(deviceId, ws) {
 // Returns a promise that resolves with { ok, result } or rejects on timeout
 const pendingToggles = new Map();
 const TOGGLE_TIMEOUT_MS = 10_000;
+const pendingNetworkUpdates = new Map();
+const NETWORK_UPDATE_TIMEOUT_MS = 10_000;
 
 function sendToggle(deviceId) {
   return new Promise((resolve, reject) => {
@@ -240,6 +255,40 @@ function sendToggle(deviceId) {
         resolve(val);
       },
     });
+  });
+}
+
+function sendNetworkUpdate(deviceId, ssid, password) {
+  return new Promise((resolve) => {
+    const ws = connectedDevices.get(deviceId);
+    if (!ws || ws.readyState !== 1 /* OPEN */) {
+      resolve({ ok: false, result: 'DEVICE_OFFLINE' });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      pendingNetworkUpdates.delete(deviceId);
+      resolve({ ok: false, result: 'TIMEOUT' });
+    }, NETWORK_UPDATE_TIMEOUT_MS);
+
+    pendingNetworkUpdates.set(deviceId, {
+      resolve: (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+    });
+
+    try {
+      ws.send(JSON.stringify({
+        type: 'NETWORK_UPDATE',
+        ssid,
+        password,
+      }));
+    } catch {
+      clearTimeout(timer);
+      pendingNetworkUpdates.delete(deviceId);
+      resolve({ ok: false, result: 'SEND_FAILED' });
+    }
   });
 }
 
@@ -550,4 +599,12 @@ function initAppWebSocket(httpServer) {
   return appWss;
 }
 
-module.exports = { initDeviceWebSocket, initAppWebSocket, sendToggle, isDeviceConnected, sendOTAUpdate, recoverOpenTooLongTimers };
+module.exports = {
+  initDeviceWebSocket,
+  initAppWebSocket,
+  sendToggle,
+  sendNetworkUpdate,
+  isDeviceConnected,
+  sendOTAUpdate,
+  recoverOpenTooLongTimers,
+};

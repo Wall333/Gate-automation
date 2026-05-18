@@ -11,7 +11,15 @@ import {
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { deleteDevice, updateDevice, uploadFirmware, getLatestFirmware, triggerOTA, triggerOTAUser } from '../api';
+import {
+  deleteDevice,
+  updateDevice,
+  updateDeviceNetwork,
+  uploadFirmware,
+  getLatestFirmware,
+  triggerOTA,
+  triggerOTAUser,
+} from '../api';
 import { useAuth } from '../AuthContext';
 import useGateStateSocket from '../hooks/useGateStateSocket';
 import Config from '../config';
@@ -25,6 +33,11 @@ export default function DeviceSettingsScreen() {
   const [name, setName] = useState(device.name);
   const [editingName, setEditingName] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingWifi, setEditingWifi] = useState(false);
+  const [wifiSsid, setWifiSsid] = useState('');
+  const [wifiPassword, setWifiPassword] = useState('');
+  const [showWifiPassword, setShowWifiPassword] = useState(false);
+  const [savingWifi, setSavingWifi] = useState(false);
 
   // Extract server info from Config
   let serverHost = '';
@@ -63,6 +76,54 @@ export default function DeviceSettingsScreen() {
   function handleCancelName() {
     setName(device.name);
     setEditingName(false);
+  }
+
+  function handleCancelWifiEdit() {
+    setEditingWifi(false);
+    setWifiSsid('');
+    setWifiPassword('');
+    setShowWifiPassword(false);
+  }
+
+  function handleSaveWifi() {
+    const trimmedSsid = wifiSsid.trim();
+    if (!trimmedSsid || !wifiPassword) {
+      Alert.alert('Missing Fields', 'Please enter both the WiFi SSID and password.');
+      return;
+    }
+    if (!device.isOnline) {
+      Alert.alert('Device Offline', 'The device must be online to update WiFi credentials remotely.');
+      return;
+    }
+
+    Alert.alert(
+      'Update WiFi Credentials',
+      'The device will save the new WiFi credentials, reboot immediately, and reconnect using that network. If the new WiFi is unavailable, it will reopen the GateController setup WiFi after several minutes.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Update',
+          onPress: async () => {
+            setSavingWifi(true);
+            try {
+              const result = await updateDeviceNetwork(device.id, {
+                ssid: trimmedSsid,
+                password: wifiPassword,
+              });
+              setWifiSsid(trimmedSsid);
+              setWifiPassword('');
+              setShowWifiPassword(false);
+              setEditingWifi(false);
+              Alert.alert('WiFi Update Sent', result.message || 'WiFi credentials sent to the device.');
+            } catch (err) {
+              Alert.alert('WiFi Update Failed', err.message);
+            } finally {
+              setSavingWifi(false);
+            }
+          },
+        },
+      ],
+    );
   }
 
   function handleRemoveDevice() {
@@ -287,11 +348,73 @@ export default function DeviceSettingsScreen() {
           <View style={styles.card}>
             <InfoRow label="Provisioning AP" value="GateController" />
             <InfoRow label="AP Password" value="gatesetup" />
+            {editingWifi ? (
+              <>
+                <Text style={styles.fieldLabel}>New WiFi SSID</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={wifiSsid}
+                  onChangeText={setWifiSsid}
+                  placeholder="Home WiFi SSID"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+
+                <Text style={styles.fieldLabel}>New WiFi Password</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={wifiPassword}
+                  onChangeText={setWifiPassword}
+                  placeholder="WiFi password"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  secureTextEntry={!showWifiPassword}
+                />
+
+                <TouchableOpacity
+                  style={styles.showPasswordRow}
+                  onPress={() => setShowWifiPassword((value) => !value)}
+                >
+                  <View style={styles.checkbox}>
+                    {showWifiPassword && <View style={styles.checkboxFill} />}
+                  </View>
+                  <Text style={styles.showPasswordText}>Show password</Text>
+                </TouchableOpacity>
+
+                <View style={styles.formActions}>
+                  {savingWifi ? (
+                    <ActivityIndicator size="small" color="#007AFF" />
+                  ) : (
+                    <>
+                      <TouchableOpacity style={styles.primarySmallButton} onPress={handleSaveWifi}>
+                        <Text style={styles.primarySmallButtonText}>Save WiFi</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.secondarySmallButton} onPress={handleCancelWifiEdit}>
+                        <Text style={styles.secondarySmallButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.uploadButton,
+                  !device.isOnline && styles.pushButtonDisabled,
+                ]}
+                onPress={() => setEditingWifi(true)}
+                disabled={!device.isOnline}
+              >
+                <Text style={styles.uploadButtonText}>
+                  {device.isOnline ? 'Edit WiFi Credentials' : 'Device Must Be Online to Edit WiFi'}
+                </Text>
+              </TouchableOpacity>
+            )}
             <Text style={styles.cardNote}>
-              To change WiFi credentials, re-provision via Add Device. If the
-              saved WiFi stops working for several minutes, the device will
-              automatically reopen its GateController setup WiFi. Physical
-              factory reset is still available as a fallback.
+              Remote WiFi changes only work while the device is online. Saving
+              new credentials reboots it immediately and tries the new network
+              right away. If that network is unavailable, the device will
+              reopen its GateController setup WiFi after several minutes.
             </Text>
           </View>
         </View>
@@ -518,6 +641,73 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingVertical: 4,
     paddingHorizontal: 6,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  formInput: {
+    borderWidth: 1,
+    borderColor: '#d8d8d8',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#1a1a1a',
+    backgroundColor: '#fafafa',
+  },
+  formActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  primarySmallButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginRight: 10,
+  },
+  primarySmallButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  secondarySmallButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
+  secondarySmallButtonText: {
+    fontSize: 14,
+    color: '#999',
+  },
+  showPasswordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1.5,
+    borderColor: '#007AFF',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  checkboxFill: {
+    width: 10,
+    height: 10,
+    backgroundColor: '#007AFF',
+    borderRadius: 2,
+  },
+  showPasswordText: {
+    fontSize: 14,
+    color: '#444',
   },
   saveText: {
     fontSize: 14,

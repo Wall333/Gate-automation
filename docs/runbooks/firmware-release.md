@@ -12,7 +12,7 @@ This is the fastest way to publish new Arduino firmware on the server so the app
 
 From Arduino IDE, build/export the current sketch so you get a `.bin` file for the release you want to publish.
 
-Expected release for the current recovery fix: `1.5.9`
+Expected release for the current remote WiFi edit build: `1.5.10`
 
 ## 2. Convert `.bin` to `.ota`
 
@@ -25,7 +25,7 @@ python tools/bin2ota.py <input.bin> <output.ota>
 Example:
 
 ```bash
-python tools/bin2ota.py build/gate_controller.bin build/gate_controller_v1.5.9.ota
+python tools/bin2ota.py build/gate_controller.bin build/gate_controller_v1.5.10.ota
 ```
 
 Use the `.ota` file for server publishing and OTA delivery.
@@ -35,7 +35,7 @@ Use the `.ota` file for server publishing and OTA delivery.
 Example with `gcloud`:
 
 ```bash
-gcloud compute scp build/gate_controller_v1.5.9.ota gate-server:~/gate_controller_v1.5.9.ota --zone us-west1-b
+gcloud compute scp build/gate_controller_v1.5.10.ota gate-server:~/gate_controller_v1.5.10.ota --zone us-west1-b
 ```
 
 ## 4. Publish It on the Server Over SSH
@@ -44,7 +44,7 @@ SSH into the VM and run:
 
 ```bash
 cd ~/Gate-automation/server
-npm run publish:firmware -- ~/gate_controller_v1.5.9.ota --version 1.5.9
+npm run publish:firmware -- ~/gate_controller_v1.5.10.ota --version 1.5.10
 ```
 
 That command:
@@ -61,7 +61,7 @@ In the app:
 
 - open Device Settings for the gate
 - confirm the device still shows online
-- confirm the app now shows latest available firmware as `1.5.9`
+- confirm the app now shows latest available firmware as `1.5.10`
 - confirm the device's current firmware is still below that, such as `1.5.4`
 
 At that point the app should show the update action automatically.
@@ -75,7 +75,7 @@ Wait for the device to:
 - download the firmware
 - reboot
 - reconnect to the server
-- report firmware version `1.5.9`
+- report firmware version `1.5.10`
 
 ## 7. Change the WiFi After the OTA Succeeds
 
@@ -83,13 +83,11 @@ Only do this after the device is confirmed on the new firmware.
 
 Then:
 
-1. Change the router SSID and/or password.
-2. Wait several minutes while the Arduino fails to reconnect to the old saved WiFi.
-3. The device should automatically reopen the `GateController` setup AP.
-4. On your phone, connect to the `GateController` WiFi.
-5. In the app, use Add Device again and enter the new WiFi credentials.
-6. Keep the same server host/domain settings used now.
-7. Finish provisioning and wait for the device to reconnect.
+1. If the device is still online, open Device Settings in the admin app and use the new Network edit action to send the new WiFi SSID and password directly.
+2. The device will save the new credentials, ACK the update, and reboot immediately.
+3. Wait for it to reconnect on the new WiFi.
+4. If the new WiFi is unavailable or wrong, the device should automatically reopen the `GateController` setup AP after several minutes.
+5. If that happens, connect to the `GateController` WiFi and use Add Device to re-provision manually.
 
 If the setup AP does not come back, use the physical fallback:
 

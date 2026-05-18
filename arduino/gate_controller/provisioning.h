@@ -148,6 +148,9 @@ void saveConfig(const DeviceConfig& cfg) {
     EEPROM.write(ADDR_DEVICE_TOKEN + i, cfg.deviceToken[i]);
   }
 
+  _config = cfg;
+  _config.valid = true;
+
   Serial.println(F("[config] Saved to EEPROM"));
 }
 

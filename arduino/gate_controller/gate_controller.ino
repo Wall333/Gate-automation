@@ -29,7 +29,7 @@
 #include "provisioning.h"
 
 // ── Firmware version (sent to server on connect) ─────────────────────
-#define FIRMWARE_VERSION  "1.5.9"
+#define FIRMWARE_VERSION  "1.5.10"
 
 // ── Factory reset pin ────────────────────────────────────────────────
 #define RESET_PIN  3   // Hold LOW during boot to factory-reset
@@ -110,6 +110,7 @@ void sendHeartbeat();
 void handleMessage(const String& message);
 void pulseRelay();
 void sendAck(bool ok);
+void sendNetworkUpdateAck(bool ok, const char* message);
 void sendGateState(bool isOpen);
 void checkReedSwitch();
 void performOTA(const char* url);
@@ -389,6 +390,28 @@ void sendAck(bool ok) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Send NETWORK_UPDATE_ACK response
+// ─────────────────────────────────────────────────────────────────────
+void sendNetworkUpdateAck(bool ok, const char* message) {
+  JsonDocument doc;
+  doc["type"] = "NETWORK_UPDATE_ACK";
+  doc["ok"] = ok;
+  doc["message"] = message ? message : "";
+
+  String payload;
+  serializeJson(doc, payload);
+
+  wsClient->beginMessage(TYPE_TEXT);
+  wsClient->print(payload);
+  wsClient->endMessage();
+
+  Serial.print(F("[network] ACK sent (ok="));
+  Serial.print(ok ? "true" : "false");
+  Serial.print(F(") — "));
+  Serial.println(message ? message : "");
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Handle incoming WebSocket messages
 // ─────────────────────────────────────────────────────────────────────
 void handleMessage(const String& message) {
@@ -436,6 +459,41 @@ void handleMessage(const String& message) {
     matrix.loadFrame(tickFrame);
     delay(1000);
     matrix.loadFrame(heartFrame);
+    return;
+  }
+
+  // ── NETWORK_UPDATE — replace saved WiFi credentials ─
+  if (strcmp(type, "NETWORK_UPDATE") == 0) {
+    const char* ssid = doc["ssid"];
+    const char* password = doc["password"];
+
+    if (!ssid || strlen(ssid) == 0 || !password || strlen(password) == 0) {
+      sendNetworkUpdateAck(false, "Missing ssid or password");
+      return;
+    }
+    if (strlen(ssid) >= sizeof(getConfig().ssid)) {
+      sendNetworkUpdateAck(false, "SSID is too long");
+      return;
+    }
+    if (strlen(password) >= sizeof(getConfig().password)) {
+      sendNetworkUpdateAck(false, "Password is too long");
+      return;
+    }
+
+    DeviceConfig newCfg = getConfig();
+    strncpy(newCfg.ssid, ssid, sizeof(newCfg.ssid) - 1);
+    newCfg.ssid[sizeof(newCfg.ssid) - 1] = '\0';
+    strncpy(newCfg.password, password, sizeof(newCfg.password) - 1);
+    newCfg.password[sizeof(newCfg.password) - 1] = '\0';
+
+    saveConfig(newCfg);
+
+    Serial.print(F("[network] Updated WiFi SSID to "));
+    Serial.println(newCfg.ssid);
+    sendNetworkUpdateAck(true, "WiFi credentials saved. Rebooting...");
+    delay(500);
+    Serial.println(F("[network] Rebooting to apply WiFi change"));
+    NVIC_SystemReset();
     return;
   }
 

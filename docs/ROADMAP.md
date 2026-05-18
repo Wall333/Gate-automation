@@ -1,13 +1,13 @@
 # Gate Controller — Feature Roadmap
 
-> **Current version:** v1.5.9  
-> **Last updated:** April 14, 2026
+> **Current version:** v1.5.10  
+> **Last updated:** May 19, 2026
 
 This document outlines the planned and potential features for the Gate Controller project. Features are organized by release, with a summary of what each one brings to the user experience. If you're looking for technical implementation details, those live in the spec files under `docs/specs/`.
 
 ---
 
-## What We Have Today (v1.0 – v1.5.9)
+## What We Have Today (v1.0 – v1.5.10)
 
 The Gate Controller is a smart gate system with three components: an **Android app**, a **cloud server**, and an **Arduino board** wired to the gate's relay. Here's what's already built:
 
@@ -114,6 +114,7 @@ The gate automatically opens when your phone gets close to home. Uses your phone
 | v1.5.7 | User firmware visibility & OTA | Done |
 | v1.5.8 | Firebase OAuth alignment & EAS Android build fixes | Done |
 | v1.5.9 | Reconnect stability & WiFi reprovision fallback | Done |
+| v1.5.10 | Remote admin WiFi edits for online devices | Done |
 | v1.6 | Guest access & dark mode | Planned |
 | v1.7 | Auto-close timer | Planned |
 | v2.0 | Roles, schedules, multi-gate | Planned |

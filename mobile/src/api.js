@@ -194,6 +194,16 @@ export async function updateDevice(deviceId, updates) {
   return data;
 }
 
+export async function updateDeviceNetwork(deviceId, network) {
+  const res = await authFetch(`/admin/devices/${deviceId}/network`, {
+    method: 'POST',
+    body: JSON.stringify(network),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to update WiFi credentials');
+  return data;
+}
+
 // ── Firmware API ─────────────────────────────────────────────────────
 
 export async function uploadFirmware(fileUri, fileName, version = '') {
